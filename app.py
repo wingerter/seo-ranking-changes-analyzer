@@ -649,13 +649,17 @@ st.sidebar.header(t["sidebar_data"])
 
 if 'analyzed' not in st.session_state:
     st.session_state['analyzed'] = False
+if 'show_success_alert' not in st.session_state:
+    st.session_state['show_success_alert'] = False
 
 def trigger_analysis():
     st.session_state['analyzed'] = True
     st.session_state['show_custom_loader'] = True
+    st.session_state['show_success_alert'] = True
 
 def on_file_upload():
     st.session_state['analyzed'] = False
+    st.session_state['show_success_alert'] = False
 
 upload_label = t[f"upload_label_{mode_key}"]
 uploaded_file = st.sidebar.file_uploader(upload_label, type=["csv"], on_change=on_file_upload)
@@ -749,7 +753,59 @@ if uploaded_file is not None and st.session_state['analyzed']:
         st.error(f"{t['err_read']}{e}")
         st.stop()
 
-    st.success(t["succ_load"])
+    if st.session_state.get('show_success_alert', False):
+        success_msg = t["succ_load"]
+        st.markdown(
+            f"""
+            <div class="custom-success-alert">
+                <svg class="success-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                <span>{success_msg}</span>
+            </div>
+            <style>
+            .custom-success-alert {{
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+                padding: 1rem;
+                margin-bottom: 1.5rem;
+                border: 1px solid rgba(144, 194, 116, 0.3);
+                border-radius: 8px;
+                color: #3b5e2b;
+                background-color: rgba(144, 194, 116, 0.1);
+                font-family: inherit;
+                font-size: 0.95rem;
+                overflow: hidden;
+                animation: fadeOutAlert 0.5s ease-out 3s forwards;
+            }}
+            .success-icon {{
+                color: #90c274;
+                flex-shrink: 0;
+            }}
+            @keyframes fadeOutAlert {{
+                0% {{
+                    opacity: 1;
+                    max-height: 100px;
+                    padding: 1rem;
+                    margin-bottom: 1.5rem;
+                    border-width: 1px;
+                }}
+                100% {{
+                    opacity: 0;
+                    max-height: 0;
+                    padding-top: 0;
+                    padding-bottom: 0;
+                    margin-bottom: 0;
+                    border-width: 0;
+                    visibility: hidden;
+                }}
+            }}
+            </style>
+            """,
+            unsafe_allow_html=True
+        )
+        st.session_state['show_success_alert'] = False
 
     # =========================================================================
     # DATA CLEANING — mode-specific
@@ -906,7 +962,6 @@ if uploaded_file is not None and st.session_state['analyzed']:
     else:
         df['Search Intent'] = df['Keyword'].apply(lambda kw: get_intent(kw, data_lang_choice))
 
-    st.markdown("<hr class='hr--grey'>", unsafe_allow_html=True)
 
     # =========================================================================
     # SHARED: Segment Definitions
@@ -929,7 +984,6 @@ if uploaded_file is not None and st.session_state['analyzed']:
         low_hanging = df[(df['Position#2'] >= 11) & (df['Position#2'] <= 15)]
 
     # =========================================================================
-    st.markdown("<hr class='hr--grey'>", unsafe_allow_html=True)
 
     # TAB DEEP-LINK LOGIC (shared)
     # =========================================================================
