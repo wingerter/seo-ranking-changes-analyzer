@@ -1,8 +1,9 @@
-import streamlit as st
+﻿import streamlit as st
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 from urllib.parse import urlparse
+import math
 import io
 import re
 import base64
@@ -119,12 +120,12 @@ translations = {
         "intent_not_analyzed": "Not Analyzed",
         # KPIs — GSC
         "kpi_header_gsc": "Overview: Real GSC Clicks",
-        "kpi_lost_total": "Lost Clicks (Total)",
-        "kpi_gained_total": "Gained Clicks (Total)",
-        "kpi_net_change": "Net Click Change",
-        "kpi_top3_drops": "Top 3 Drops",
-        "kpi_top10_drops": "Top 10 Drops",
-        "kpi_lhf": "Low Hanging Fruits",
+        "kpi_lost_total": "📉 Lost Clicks (Total)",
+        "kpi_gained_total": "📈 Gained Clicks (Total)",
+        "kpi_net_change": "🖱️ Net Click Change",
+        "kpi_top3_drops": "🚨 Top 3 Drops",
+        "kpi_top10_drops": "⚠️ Top 10 Drops",
+        "kpi_lhf": "🎯 Low Hanging Fruits",
         "kpi_lhf_link": "See tab below",
         "kpi_lhf_help_gsc": "Actual impressions generated in the current timeframe by keywords ranking on positions 11-15. High impressions here mean great potential if pushed to page 1.",
         "kpi_cluster_title": "Topic Cluster Performance",
@@ -134,12 +135,12 @@ translations = {
         "clicks": "Clicks",
         # KPIs — Sistrix
         "kpi_header_sistrix": "Overview: Business Impact",
-        "kpi_lost_total_sv": "Lost Search Volume (Total)",
-        "kpi_gained_total_sv": "Gained Search Volume (Total)",
-        "kpi_net_change_sv": "Net Search Volume Change",
-        "kpi_avg_pos_change": "Avg. Position Change",
-        "kpi_value_total": "Monetary Loss (AdWords Equivalent)",
-        "kpi_total_loss": "Complete Losses",
+        "kpi_lost_total_sv": "📉 Lost Search Volume (Total)",
+        "kpi_gained_total_sv": "📈 Gained Search Volume (Total)",
+        "kpi_net_change_sv": "📊 Net Search Volume Change",
+        "kpi_avg_pos_change": "🗺️ Avg. Position Change",
+        "kpi_value_total": "💶 Monetary Loss (AdWords Equivalent)",
+        "kpi_total_loss": "❌ Complete Losses",
         "kpi_total_loss_help": "Keywords that fell out of the Top 100 completely.",
         "kpi_lhf_help_sistrix": "Actual search volume of keywords ranking on positions 11-15. High search volume here means great potential if pushed to page 1.",
         "dir_chart_title_sv": "Which directories lost the most search volume?",
@@ -149,6 +150,7 @@ translations = {
         # Intent
         "kpi_intent_title": "Search Intent Distribution",
         # Tabs
+        "tab_summary": "Summary",
         "tab_dir": "Directory Analysis",
         "tab_cluster": "Topic Clusters",
         "tab_drops": "Ranking Drops",
@@ -210,6 +212,10 @@ translations = {
         "ad_filter_dir": "Filter by Directory",
         "ad_filter_kw": "Search Keyword",
         "ad_filter_intent": "Filter by Search Intent",
+        "lhf_pot_help": "Calculated optimization potential (0-10) based on ranking position and volume/impressions",
+        "lhf_diff_label": "Difficulty",
+        "lhf_diff_help": "Estimated ranking difficulty based on search volume or impressions",
+        "dir_chart_title_tree": "Lost Search Volume Distribution by Directory (Treemap)",
         # Footer / Legal
         "footer": "MIT License &copy; 2026 Benjamin &quot;SEOux Indianer&quot; Wingerter | Created in Munich &amp; Bangkok with ❤️ | <a href='https://seouxindianer.de' target='_blank' style='color: #2ea3f2; text-decoration: underline;'>seouxindianer.de</a> | Co-developed with Antigravity 🤖",
         "legal_header": "Legal & Privacy Policy",
@@ -276,12 +282,12 @@ You have the right to access, rectify, erase, or restrict the processing of your
         "intent_not_analyzed": "Nicht analysiert",
         # KPIs — GSC
         "kpi_header_gsc": "Überblick: Echte GSC-Klicks",
-        "kpi_lost_total": "Verlorene Klicks (Gesamt)",
-        "kpi_gained_total": "Gewonnene Klicks (Gesamt)",
-        "kpi_net_change": "Netto Klick-Veränderung",
-        "kpi_top3_drops": "Top 3 Abstürze",
-        "kpi_top10_drops": "Top 10 Abstürze",
-        "kpi_lhf": "Low Hanging Fruits",
+        "kpi_lost_total": "📉 Verlorene Klicks (Gesamt)",
+        "kpi_gained_total": "📈 Gewonnene Klicks (Gesamt)",
+        "kpi_net_change": "🖱️ Netto Klick-Veränderung",
+        "kpi_top3_drops": "🚨 Top 3 Abstürze",
+        "kpi_top10_drops": "⚠️ Top 10 Abstürze",
+        "kpi_lhf": "🎯 Low Hanging Fruits",
         "kpi_lhf_link": "Siehe Reiter unten",
         "kpi_lhf_help_gsc": "Echte Impressionen, die diese Keywords im aktuellen Zeitraum auf den Positionen 11-15 gesammelt haben. Viele Impressionen hier bedeuten hohes Potenzial für Seite 1.",
         "kpi_cluster_title": "Themen-Cluster Performance",
@@ -291,12 +297,12 @@ You have the right to access, rectify, erase, or restrict the processing of your
         "clicks": "Klicks",
         # KPIs — Sistrix
         "kpi_header_sistrix": "Überblick: Business Impact",
-        "kpi_lost_total_sv": "Verlorenes Suchvolumen (Gesamt)",
-        "kpi_gained_total_sv": "Gewonnenes Suchvolumen (Gesamt)",
-        "kpi_net_change_sv": "Netto Suchvolumen-Veränderung",
-        "kpi_avg_pos_change": "Ø Positions-Veränderung",
-        "kpi_value_total": "Monetärer Verlust (AdWords-Äquivalent)",
-        "kpi_total_loss": "Komplette Verluste",
+        "kpi_lost_total_sv": "📉 Verlorenes Suchvolumen (Gesamt)",
+        "kpi_gained_total_sv": "📈 Gewonnenes Suchvolumen (Gesamt)",
+        "kpi_net_change_sv": "📊 Netto Suchvolumen-Veränderung",
+        "kpi_avg_pos_change": "🗺️ Ø Positions-Veränderung",
+        "kpi_value_total": "💶 Monetärer Verlust (AdWords-Äquivalent)",
+        "kpi_total_loss": "❌ Komplette Verluste",
         "kpi_total_loss_help": "Keywords, die komplett aus den Top 100 gefallen sind.",
         "kpi_lhf_help_sistrix": "Das komplette Suchvolumen, das diese Keywords im aktuellen Zeitraum auf den Positionen 11-15 sammeln.",
         "dir_chart_title_sv": "Welche Verzeichnisse haben am meisten Suchvolumen verloren?",
@@ -306,6 +312,7 @@ You have the right to access, rectify, erase, or restrict the processing of your
         # Intent
         "kpi_intent_title": "Suchintents-Verteilung",
         # Tabs
+        "tab_summary": "Zusammenfassung",
         "tab_dir": "Verzeichnis-Analyse",
         "tab_cluster": "Themen-Cluster",
         "tab_drops": "Ranking Drops",
@@ -367,6 +374,10 @@ You have the right to access, rectify, erase, or restrict the processing of your
         "ad_filter_dir": "Nach Verzeichnis filtern",
         "ad_filter_kw": "Keyword suchen",
         "ad_filter_intent": "Nach Suchintent filtern",
+        "lhf_pot_help": "Berechnetes Optimierungspotenzial (0-10) basierend auf Ranking-Position und Suchvolumen/Impressionen",
+        "lhf_diff_label": "Schwierigkeit",
+        "lhf_diff_help": "Geschätzte Ranking-Schwierigkeit basierend auf Suchvolumen oder Impressionen",
+        "dir_chart_title_tree": "Verteilung des verlorenen Suchvolumens nach Verzeichnis (Treemap)",
         # Footer / Legal
         "footer": "MIT License &copy; 2026 Benjamin &quot;SEOux Indianer&quot; Wingerter | Erstellt in München &amp; Bangkok mit ❤️ | <a href='https://seouxindianer.de' target='_blank' style='color: #2ea3f2; text-decoration: underline;'>seouxindianer.de</a> | Mitentwickelt von Antigravity 🤖",
         "legal_header": "Rechtliches / Impressum",
@@ -491,6 +502,35 @@ def get_intent(kw, lang_choice):
         return "not analyzed"
 
     return ", ".join(intents) if intents else "undefined"
+
+# =============================================================================
+# HELPER: Low Hanging Fruits (LHF) Calculations
+# =============================================================================
+def calculate_lhf_gsc(row):
+    pos = row['Position_New']
+    imp = row['Impressions_New']
+    if lang == "DE":
+        diff = "🔴 Schwer" if imp > 10000 else ("🟡 Mittel" if imp > 2000 else "🟢 Leicht")
+    else:
+        diff = "🔴 High" if imp > 10000 else ("🟡 Medium" if imp > 2000 else "🟢 Low")
+    
+    factor = 16 - pos
+    log_part = math.log10(imp + 10)
+    score = min((factor * log_part) / 2.0, 10.0)
+    return pd.Series([score, diff])
+
+def calculate_lhf_sistrix(row):
+    pos = row['Position#2']
+    sv = row['Search Volume']
+    if lang == "DE":
+        diff = "🔴 Schwer" if sv > 5000 else ("🟡 Mittel" if sv > 1000 else "🟢 Leicht")
+    else:
+        diff = "🔴 High" if sv > 5000 else ("🟡 Medium" if sv > 1000 else "🟢 Low")
+    
+    factor = 16 - pos
+    log_part = math.log10(sv + 10)
+    score = min((factor * log_part) / 2.0, 10.0)
+    return pd.Series([score, diff])
 
 # =============================================================================
 # HELPER: Styled Dataframe Renderer
@@ -889,441 +929,8 @@ if uploaded_file is not None and st.session_state['analyzed']:
         low_hanging = df[(df['Position#2'] >= 11) & (df['Position#2'] <= 15)]
 
     # =========================================================================
-    # KPI SECTION — GSC
-    # =========================================================================
-    if mode_key == "gsc":
-        st.header(t["kpi_header_gsc"])
-
-        total_clicks_lost = int(losers['Clicks Loss'].sum())
-        total_clicks_gained = int(winners['Clicks Gain'].sum())
-        net_clicks = total_clicks_gained - total_clicks_lost
-        lhf_impressions = int(low_hanging['Impressions_New'].sum())
-
-        total_clicks_old = df['Clicks_Old'].sum()
-        pct_change = (net_clicks / total_clicks_old * 100) if total_clicks_old > 0 else 0.0
-        if net_clicks > 0:
-            pct_change_formatted = f"+{format_num(pct_change, decimal_places=1)}{pct_sign}"
-        elif net_clicks < 0:
-            pct_change_formatted = f"{format_num(pct_change, decimal_places=1)}{pct_sign}"
-        else:
-            pct_change_formatted = f"{format_num(0.0, decimal_places=1)}{pct_sign}"
-
-        loss_val_str = f"-{format_num(total_clicks_lost)}"
-        gain_val_str = f"+{format_num(total_clicks_gained)}"
-        net_val_str = f"+{format_num(net_clicks)}" if net_clicks > 0 else format_num(net_clicks)
-        pct_val_str = pct_change_formatted
-
-        top3_count = len(top3_drops)
-        top3_loss = f"-{format_num(int(top3_drops['Clicks Loss'].sum()))}"
-        top10_count = len(top10_drops)
-        top10_loss = f"-{format_num(int(top10_drops['Clicks Loss'].sum()))}"
-        lhf_count = len(low_hanging)
-        lhf_imp = format_num(lhf_impressions)
-
-        if lang == "DE":
-            story_text = f"""<p style='font-family: "Open Sans", sans-serif; color: #444444; line-height: 1.6; font-size: 0.95rem; margin-bottom: 1rem;'>
-Im analysierten Zeitraum verzeichnete die Website eine
-<strong style='color: #232323;'>Netto-Klick-Veränderung von <span style='color: {"#90c274" if net_clicks > 0 else "#d28063"}; font-weight: bold;'>{net_val_str}</span> ({pct_val_str})</strong>.
-Dieser Wert setzt sich aus einem <strong>Gewinn von <span style='color: #90c274; font-weight: bold;'>{gain_val_str}</span> Klicks</strong>
-und einem <strong>Verlust von <span style='color: #d28063; font-weight: bold;'>{loss_val_str}</span> Klicks</strong> zusammen.
-</p>
-<h4 style='font-family: "Raleway", sans-serif; font-weight: 700; color: #232323; margin-top: 1rem; margin-bottom: 0.5rem;'>Haupttreiber des Klick-Verlusts:</h4>
-<ul style='font-family: "Open Sans", sans-serif; color: #444444; line-height: 1.5; font-size: 0.95rem; padding-left: 1.2rem; margin-top: 0;'>
-<li style='margin-bottom: 0.5rem;'><strong>Abstürze aus den Top 3:</strong> <span style='font-weight: bold;'>{top3_count} Keywords</span> sind aus den Top-Positionen (1-3) herausgerutscht. Verlust: <span style='color: #d28063; font-weight: bold;'>{top3_loss} Klicks</span>.</li>
-<li style='margin-bottom: 0.5rem;'><strong>Abstürze aus den Top 10:</strong> <span style='font-weight: bold;'>{top10_count} Keywords</span> haben die erste Suchergebnisseite verlassen. Verlust: <span style='color: #d28063; font-weight: bold;'>{top10_loss} Klicks</span>.</li>
-</ul>
-<h4 style='font-family: "Raleway", sans-serif; font-weight: 700; color: #232323; margin-top: 1rem; margin-bottom: 0.5rem;'>Quick-Wins / Handlungsempfehlungen:</h4>
-<ul style='font-family: "Open Sans", sans-serif; color: #444444; line-height: 1.5; font-size: 0.95rem; padding-left: 1.2rem; margin-top: 0;'>
-<li>Es wurden <strong style='color: #90c274;'>{lhf_count} Schwellen-Keywords (Low Hanging Fruits)</strong> auf den Positionen 11-15 identifiziert. Diese erzielen aktuell bereits <span style='font-weight: bold;'>{lhf_imp} Impressionen</span> auf Seite 2. Durch gezielte On-Page-Optimierung können diese schnell auf Seite 1 geschoben werden.</li>
-</ul>"""
-            story_title = "Executive Summary & Marketing-Story"
-        else:
-            story_text = f"""<p style='font-family: "Open Sans", sans-serif; color: #444444; line-height: 1.6; font-size: 0.95rem; margin-bottom: 1rem;'>
-During the analyzed timeframe, the website recorded a
-<strong style='color: #232323;'>Net Click Change of <span style='color: {"#90c274" if net_clicks > 0 else "#d28063"}; font-weight: bold;'>{net_val_str}</span> ({pct_val_str})</strong>.
-This value is composed of a <strong>gain of <span style='color: #90c274; font-weight: bold;'>{gain_val_str}</span> clicks</strong>
-and a <strong>loss of <span style='color: #d28063; font-weight: bold;'>{loss_val_str}</span> clicks</strong>.
-</p>
-<h4 style='font-family: "Raleway", sans-serif; font-weight: 700; color: #232323; margin-top: 1rem; margin-bottom: 0.5rem;'>Main Drivers of Click Loss:</h4>
-<ul style='font-family: "Open Sans", sans-serif; color: #444444; line-height: 1.5; font-size: 0.95rem; padding-left: 1.2rem; margin-top: 0;'>
-<li style='margin-bottom: 0.5rem;'><strong>Drops from Top 3:</strong> <span style='font-weight: bold;'>{top3_count} keywords</span> slipped out of the top positions (1-3). This caused a loss of <span style='color: #d28063; font-weight: bold;'>{top3_loss} clicks</span>.</li>
-<li style='margin-bottom: 0.5rem;'><strong>Drops from Top 10:</strong> <span style='font-weight: bold;'>{top10_count} keywords</span> fell off page 1, resulting in a loss of <span style='color: #d28063; font-weight: bold;'>{top10_loss} clicks</span>.</li>
-</ul>
-<h4 style='font-family: "Raleway", sans-serif; font-weight: 700; color: #232323; margin-top: 1rem; margin-bottom: 0.5rem;'>Quick-Wins / Actionable Recommendations:</h4>
-<ul style='font-family: "Open Sans", sans-serif; color: #444444; line-height: 1.5; font-size: 0.95rem; padding-left: 1.2rem; margin-top: 0;'>
-<li>We identified <strong style='color: #90c274;'>{lhf_count} Threshold Keywords (Low Hanging Fruits)</strong> ranking on positions 11-15. These already generate <span style='font-weight: bold;'>{lhf_imp} impressions</span> on page 2. Targeted on-page optimization can push these onto page 1 quickly.</li>
-</ul>"""
-            story_title = "Executive Summary & Marketing Story"
-
-        kpi_col1, kpi_col2 = st.columns([5, 3])
-        with kpi_col1:
-            with st.container(border=True, key="gsc_exec_summary_container"):
-                st.markdown(f"""<h3 style='margin-top: 0; margin-bottom: 1rem; font-family: "Raleway", sans-serif; font-weight: 800; color: #232323;'>{story_title}</h3>{story_text}""", unsafe_allow_html=True)
-                def select_lhf_tab_gsc():
-                    st.session_state["main_tabs"] = t["tab_lhf"]
-                    st.query_params["tab"] = "lhf"
-                    st.session_state["scroll_target"] = "low-hanging-fruits"
-                    st.session_state["show_custom_loader"] = True
-                def select_top3_tab_gsc():
-                    st.session_state["main_tabs"] = t["tab_drops"]
-                    st.query_params["tab"] = "top3"
-                    st.session_state["scroll_target"] = "top3-drops"
-                    st.session_state["show_custom_loader"] = True
-                def select_top10_tab_gsc():
-                    st.session_state["main_tabs"] = t["tab_drops"]
-                    st.query_params["tab"] = "top10"
-                    st.session_state["scroll_target"] = "top10-drops"
-                    st.session_state["show_custom_loader"] = True
-                b_col1, b_col2, b_col3 = st.columns(3)
-                with b_col1:
-                    st.button("🔍 Top 3 Drops", key="goto_top3_btn", on_click=select_top3_tab_gsc, type="secondary", use_container_width=True)
-                with b_col2:
-                    st.button("🔍 Top 10 Drops", key="goto_top10_btn", on_click=select_top10_tab_gsc, type="secondary", use_container_width=True)
-                with b_col3:
-                    st.button("🎯 Low Hanging Fruits", key="goto_lhf_btn", on_click=select_lhf_tab_gsc, type="secondary", use_container_width=True)
-
-        with kpi_col2:
-            st.metric(t["kpi_net_change"], net_val_str, delta=pct_val_str)
-            sub_c1, sub_c2 = st.columns(2)
-            with sub_c1:
-                st.metric(t["kpi_lost_total"], loss_val_str)
-            with sub_c2:
-                st.metric(t["kpi_gained_total"], gain_val_str)
-            sub_c3, sub_c4 = st.columns(2)
-            with sub_c3:
-                st.metric(t["kpi_top3_drops"], f"{top3_count}", delta=top3_loss, delta_color="normal")
-            with sub_c4:
-                st.metric(t["kpi_top10_drops"], f"{top10_count}", delta=top10_loss, delta_color="normal")
-            st.metric(t["kpi_lhf"], f"{lhf_count}", delta=f"{lhf_imp} Imp.", delta_color="off", help=t["kpi_lhf_help_gsc"])
-
-        st.markdown("<hr class='hr--grey'>", unsafe_allow_html=True)
-
-        viz_col1, viz_col2 = st.columns(2)
-        with viz_col1:
-            st.markdown("#### " + t["kpi_cluster_title"])
-            cluster_net = df.groupby('Cluster')['Clicks Change'].sum().reset_index()
-            cluster_net = cluster_net[cluster_net['Cluster'] != "undefined"]
-            if not cluster_net.empty:
-                best_cluster = cluster_net.loc[cluster_net['Clicks Change'].idxmax()]
-                worst_cluster = cluster_net.loc[cluster_net['Clicks Change'].idxmin()]
-                best_val = best_cluster['Clicks Change']
-                best_delta = f"+{format_num(best_val)} {t['clicks']}" if best_val > 0 else f"{format_num(best_val)} {t['clicks']}"
-                worst_val = worst_cluster['Clicks Change']
-                worst_delta = f"+{format_num(worst_val)} {t['clicks']}" if worst_val > 0 else f"{format_num(worst_val)} {t['clicks']}"
-                c1, c2 = st.columns(2)
-                with c1:
-                    st.metric(t["kpi_best_cluster"], best_cluster['Cluster'], best_delta)
-                with c2:
-                    st.metric(t["kpi_worst_cluster"], worst_cluster['Cluster'], worst_delta)
-                top_bottom = pd.concat([cluster_net.nlargest(3, 'Clicks Change'), cluster_net.nsmallest(3, 'Clicks Change')]).drop_duplicates().sort_values('Clicks Change')
-                fig_net = px.bar(top_bottom, x='Clicks Change', y='Cluster', orientation='h',
-                                 color='Clicks Change', color_continuous_scale=[[0.0, '#d28063'], [0.5, '#ffed00'], [1.0, '#90c274']], height=200)
-                style_plotly_fig(fig_net)
-                fig_net.update_layout(margin=dict(l=10, r=10, t=25, b=10))
-                st.plotly_chart(fig_net, use_container_width=True)
-
-        with viz_col2:
-            st.markdown("#### " + t["kpi_top3_title"])
-            if not top3_drops.empty:
-                worst_top3 = top3_drops.nlargest(5, 'Clicks Loss').sort_values('Clicks Loss', ascending=True)
-                fig_t3 = px.bar(worst_top3, x='Clicks Loss', y='Keyword', orientation='h',
-                                color_discrete_sequence=['#d28063'], height=270)
-                style_plotly_fig(fig_t3)
-                fig_t3.update_layout(margin=dict(l=10, r=10, t=25, b=10))
-                st.plotly_chart(fig_t3, use_container_width=True)
-            else:
-                st.info(t["rd_t3_empty"])
-
-        if not intent_skipped:
-            viz_col3, viz_col4 = st.columns(2)
-            with viz_col3:
-                st.markdown("#### " + t["kpi_intent_title"])
-                intent_df = df.assign(Intent=df['Search Intent'].str.split(', ')).explode('Intent')
-                intent_counts = intent_df['Intent'].value_counts().reset_index()
-                intent_counts.columns = ['Search Intent', 'Count']
-                color_map = {"DO (Transactional)": "#90c274", "KNOW": "#2ea3f2",
-                             "regional:CITY": "#ffed00", "regional:COUNTRY": "#f29e2e", "undefined": "#dfdfdf"}
-                fig_pie = px.pie(intent_counts, values='Count', names='Search Intent',
-                                 color='Search Intent', color_discrete_map=color_map, hole=0.4, height=280)
-                style_plotly_fig(fig_pie)
-                fig_pie.update_layout(margin=dict(l=10, r=10, t=25, b=10))
-                st.plotly_chart(fig_pie, use_container_width=True)
-            with viz_col4:
-                st.markdown("#### Details")
-                intent_pct = intent_df['Intent'].value_counts(normalize=True).reset_index()
-                intent_pct.columns = ['Search Intent', 'Percentage']
-                intent_pct['Percentage'] = intent_pct['Percentage'] * 100
-                intent_summary = pd.merge(intent_counts, intent_pct, on='Search Intent')
-                col_intent = 'Search Intent' if lang == 'EN' else 'Suchintent'
-                col_count = 'Keywords (Count)' if lang == 'EN' else 'Keywords (Anzahl)'
-                col_share = 'Share (%)' if lang == 'EN' else 'Anteil (%)'
-                intent_summary.columns = [col_intent, col_count, col_share]
-                formatted_intent_summary = intent_summary.copy()
-                formatted_intent_summary[col_count] = formatted_intent_summary[col_count].apply(lambda x: format_num(x))
-                formatted_intent_summary[col_share] = formatted_intent_summary[col_share].apply(lambda x: f"{format_num(x, 1)}{pct_sign}")
-                st.write("")
-                st.dataframe(formatted_intent_summary, use_container_width=True, hide_index=True)
-        else:
-            st.info(t["intent_not_analyzed_msg"])
-
-    # =========================================================================
-    # KPI SECTION — SISTRIX
-    # =========================================================================
-    elif mode_key == "sistrix":
-        st.header(t["kpi_header_sistrix"])
-
-        gained_keywords_count = int((df['Position Change'] > 0).sum())
-        lost_keywords_count = int((df['Position Change'] < 0).sum())
-        avg_gain_pos = df[df['Position Change'] > 0]['Position Change'].mean()
-        if pd.isnull(avg_gain_pos): avg_gain_pos = 0.0
-        avg_loss_pos = abs(df[df['Position Change'] < 0]['Position Change'].mean())
-        if pd.isnull(avg_loss_pos): avg_loss_pos = 0.0
-        avg_pos_change = df['Position Change'].mean()
-        if pd.isnull(avg_pos_change): avg_pos_change = 0.0
-
-        gained_keywords_sv = df[df['Position Change'] > 0]['Search Volume'].sum()
-        lost_keywords_sv = df[df['Position Change'] < 0]['Search Volume'].sum()
-        total_sv = df['Search Volume'].sum()
-        total_sv_old = total_sv
-        total_metric_old = total_sv_old
-
-        total_sv_loss = losers['Search Volume'].sum()
-        total_sv_gained = winners['Search Volume'].sum()
-        net_sv = total_sv_gained - total_sv_loss
-        pct_sv_change = (net_sv / total_sv_old * 100) if total_sv_old > 0 else 0.0
-
-        net_sv_sign = "+" if net_sv > 0 else ""
-        net_sv_val_str = f"{net_sv_sign}{format_num(int(net_sv))} SV"
-        pct_sv_val_str = f"{net_sv_sign}{format_num(pct_sv_change, 1)}{pct_sign}"
-        loss_sv_pct_str = f"-{format_num(total_sv_loss / total_sv_old * 100 if total_sv_old > 0 else 0.0, 1)}{pct_sign}"
-        gain_sv_pct_str = f"+{format_num(total_sv_gained / total_sv_old * 100 if total_sv_old > 0 else 0.0, 1)}{pct_sign}"
-        loss_sv_val_str = f"-{format_num(int(total_sv_loss))} SV"
-        gain_sv_val_str = f"+{format_num(int(total_sv_gained))} SV"
-
-        total_clicks_old = df['Traffic#1'].sum()
-        total_clicks_loss = df['Traffic Loss'].clip(lower=0).sum()
-        total_clicks_gain = df['Traffic Gain'].clip(lower=0).sum()
-        net_clicks = total_clicks_gain - total_clicks_loss
-        pct_clicks_change = (net_clicks / total_clicks_old * 100) if total_clicks_old > 0 else 0.0
-        clicks_unit = "Klicks" if lang == "DE" else "clicks"
-        net_clicks_sign = "+" if net_clicks > 0 else ""
-        net_clicks_val_str = f"{net_clicks_sign}{format_num(int(net_clicks))} {clicks_unit}"
-        pct_clicks_val_str = f"{net_clicks_sign}{format_num(pct_clicks_change, 1)}{pct_sign}"
-
-        total_value_old = (df['Traffic#1'] * df['CPC']).sum()
-        total_value_loss = df['Lost Value €'].sum()
-        pct_value_change = (total_value_loss / total_value_old * 100) if total_value_old > 0 else 0.0
-        value_val_str = f"-{format_num(total_value_loss, 2)} €" if lang == "DE" else f"-€{format_num(total_value_loss, 2)}"
-        value_pct_str = f"-{format_num(pct_value_change, 1)}{pct_sign}"
-
-        top3_count = len(top3_drops)
-        top3_loss_val = top3_drops['Search Volume'].sum()
-        top3_pct = (top3_loss_val / total_sv_old * 100) if total_sv_old > 0 else 0.0
-        top3_loss_str = f"-{format_num(int(top3_loss_val))} SV (-{format_num(top3_pct, 1)}{pct_sign})"
-        top3_loss_only = f"{format_num(int(top3_loss_val))} SV"
-
-        top10_count = len(top10_drops)
-        top10_loss_val = top10_drops['Search Volume'].sum()
-        top10_pct = (top10_loss_val / total_sv_old * 100) if total_sv_old > 0 else 0.0
-        top10_loss_str = f"-{format_num(int(top10_loss_val))} SV (-{format_num(top10_pct, 1)}{pct_sign})"
-        top10_loss_only = f"{format_num(int(top10_loss_val))} SV"
-
-        total_loss_count = len(total_loss)
-        total_loss_loss_val = total_loss['Search Volume'].sum()
-        total_loss_pct = (total_loss_loss_val / total_sv_old * 100) if total_sv_old > 0 else 0.0
-        total_loss_loss_str = f"-{format_num(int(total_loss_loss_val))} SV (-{format_num(total_loss_pct, 1)}{pct_sign})"
-        total_loss_loss_only = f"{format_num(int(total_loss_loss_val))} SV"
-
-        lhf_count = len(low_hanging)
-        lhf_search_vol = int(low_hanging['Search Volume'].sum())
-        lhf_sv = format_num(lhf_search_vol)
-        lhf_pct = (lhf_search_vol / total_sv_old * 100) if total_sv_old > 0 else 0.0
-        lhf_delta_str = f"+{lhf_sv} SV (+{format_num(lhf_pct, 1)}{pct_sign})"
-
-        avg_pos_change_sign = "+" if avg_pos_change > 0 else ""
-        avg_pos_change_val_str = f"{avg_pos_change_sign}{format_num(avg_pos_change, 2)}"
-        avg_pos_change_delta_str = f"+{gained_keywords_count} / -{lost_keywords_count} KWs"
-
-        date_range_str_old = date_old.strftime('%d.%m.%Y')
-        date_range_str_new = date_new.strftime('%d.%m.%Y')
-
-        if lang == "DE":
-            story_text = f"""<p style='font-family: "Open Sans", sans-serif; color: #444444; line-height: 1.6; font-size: 0.95rem; margin-bottom: 1rem;'>
-Im Vergleich vom <strong>{date_range_str_old}</strong> zum <strong>{date_range_str_new}</strong> verzeichnete Ihre Website folgende Ranking-Entwicklungen:
-</p>
-<h4 style='font-family: "Raleway", sans-serif; font-weight: 700; color: #232323; margin-top: 1rem; margin-bottom: 0.5rem;'>Ranking-Veränderungen (Positions-Daten):</h4>
-<ul style='font-family: "Open Sans", sans-serif; color: #444444; line-height: 1.5; font-size: 0.95rem; padding-left: 1.2rem; margin-top: 0;'>
-<li style='margin-bottom: 0.5rem;'><strong>Positions-Gewinne:</strong> <span style='font-weight: bold;'>{format_num(gained_keywords_count)} Keywords</span> verbessert (Ø <span style='color: #90c274; font-weight: bold;'>+{format_num(avg_gain_pos, 1)} Positionen</span>, Gesamt-SV: <span style='font-weight: bold;'>{format_num(gained_keywords_sv)} SV</span>).</li>
-<li style='margin-bottom: 0.5rem;'><strong>Positions-Verluste:</strong> <span style='font-weight: bold;'>{format_num(lost_keywords_count)} Keywords</span> verschlechtert (Ø <span style='color: #d28063; font-weight: bold;'>-{format_num(avg_loss_pos, 1)} Positionen</span>, Gesamt-SV: <span style='font-weight: bold;'>{format_num(lost_keywords_sv)} SV</span>).</li>
-<li style='margin-bottom: 0.5rem;'><strong>Gesamt-Tendenz:</strong> Ø Positions-Veränderung: <span style='font-weight: bold; color: {"#90c274" if avg_pos_change > 0 else "#d28063"};'>{avg_pos_change_sign}{format_num(avg_pos_change, 2)} Positionen</span> (Gesamt-SV: <span style='font-weight: bold;'>{format_num(total_sv)} SV</span>).</li>
-</ul>
-<h4 style='font-family: "Raleway", sans-serif; font-weight: 700; color: #232323; margin-top: 1rem; margin-bottom: 0.5rem;'>Haupttreiber der Ranking-Abstürze:</h4>
-<ul style='font-family: "Open Sans", sans-serif; color: #444444; line-height: 1.5; font-size: 0.95rem; padding-left: 1.2rem; margin-top: 0;'>
-<li style='margin-bottom: 0.5rem;'><strong>Abstürze aus den Top 3:</strong> <span style='font-weight: bold;'>{format_num(top3_count)} Keywords</span> verloren Top-Positionen (Verlust: <span style='color: #d28063; font-weight: bold;'>{top3_loss_only}</span>).</li>
-<li style='margin-bottom: 0.5rem;'><strong>Abstürze aus den Top 10:</strong> Weitere <span style='font-weight: bold;'>{format_num(top10_count)} Keywords</span> fielen von Seite 1 (Verlust: <span style='color: #d28063; font-weight: bold;'>{top10_loss_only}</span>).</li>
-<li style='margin-bottom: 0.5rem;'><strong>Vollständige Ranking-Verluste:</strong> <span style='font-weight: bold;'>{format_num(total_loss_count)} Keywords</span> komplett aus den Top 100 herausgefallen (Verlust: <span style='color: #d28063; font-weight: bold;'>{total_loss_loss_only}</span>).</li>
-</ul>
-<h4 style='font-family: "Raleway", sans-serif; font-weight: 700; color: #232323; margin-top: 1rem; margin-bottom: 0.5rem;'>Quick-Wins / Handlungsempfehlungen:</h4>
-<ul style='font-family: "Open Sans", sans-serif; color: #444444; line-height: 1.5; font-size: 0.95rem; padding-left: 1.2rem; margin-top: 0;'>
-<li>Ich empfehle On-Page-Optimierung für die <strong style='color: #90c274;'>{format_num(lhf_count)} Schwellen-Keywords (Low Hanging Fruits)</strong> auf den Positionen 11-15 ({lhf_sv} SV auf Seite 2).</li>
-</ul>"""
-            story_title = "Executive Summary & Marketing-Story"
-        else:
-            story_text = f"""<p style='font-family: "Open Sans", sans-serif; color: #444444; line-height: 1.6; font-size: 0.95rem; margin-bottom: 1rem;'>
-Comparing <strong>{date_range_str_old}</strong> to <strong>{date_range_str_new}</strong>, your website recorded the following ranking developments:
-</p>
-<h4 style='font-family: "Raleway", sans-serif; font-weight: 700; color: #232323; margin-top: 1rem; margin-bottom: 0.5rem;'>Ranking Changes (Position Data):</h4>
-<ul style='font-family: "Open Sans", sans-serif; color: #444444; line-height: 1.5; font-size: 0.95rem; padding-left: 1.2rem; margin-top: 0;'>
-<li style='margin-bottom: 0.5rem;'><strong>Position Gains:</strong> <span style='font-weight: bold;'>{format_num(gained_keywords_count)} keywords</span> improved (avg. <span style='color: #90c274; font-weight: bold;'>+{format_num(avg_gain_pos, 1)} positions</span>, total SV: <span style='font-weight: bold;'>{format_num(gained_keywords_sv)} SV</span>).</li>
-<li style='margin-bottom: 0.5rem;'><strong>Position Losses:</strong> <span style='font-weight: bold;'>{format_num(lost_keywords_count)} keywords</span> deteriorated (avg. <span style='color: #d28063; font-weight: bold;'>-{format_num(avg_loss_pos, 1)} positions</span>, total SV: <span style='font-weight: bold;'>{format_num(lost_keywords_sv)} SV</span>).</li>
-<li style='margin-bottom: 0.5rem;'><strong>Overall Trend:</strong> Avg. position change: <span style='font-weight: bold; color: {"#90c274" if avg_pos_change > 0 else "#d28063"};'>{avg_pos_change_sign}{format_num(avg_pos_change, 2)} positions</span> (total SV: <span style='font-weight: bold;'>{format_num(total_sv)} SV</span>).</li>
-</ul>
-<h4 style='font-family: "Raleway", sans-serif; font-weight: 700; color: #232323; margin-top: 1rem; margin-bottom: 0.5rem;'>Main Drivers of Ranking Drops:</h4>
-<ul style='font-family: "Open Sans", sans-serif; color: #444444; line-height: 1.5; font-size: 0.95rem; padding-left: 1.2rem; margin-top: 0;'>
-<li style='margin-bottom: 0.5rem;'><strong>Drops from Top 3:</strong> <span style='font-weight: bold;'>{format_num(top3_count)} keywords</span> lost top positions (loss of <span style='color: #d28063; font-weight: bold;'>{top3_loss_only}</span>).</li>
-<li style='margin-bottom: 0.5rem;'><strong>Drops from Top 10:</strong> <span style='font-weight: bold;'>{format_num(top10_count)} keywords</span> fell off page 1 (loss of <span style='color: #d28063; font-weight: bold;'>{top10_loss_only}</span>).</li>
-<li style='margin-bottom: 0.5rem;'><strong>Complete Losses:</strong> <span style='font-weight: bold;'>{format_num(total_loss_count)} keywords</span> dropped out of the Top 100 (loss of <span style='color: #d28063; font-weight: bold;'>{total_loss_loss_only}</span>).</li>
-</ul>
-<h4 style='font-family: "Raleway", sans-serif; font-weight: 700; color: #232323; margin-top: 1rem; margin-bottom: 0.5rem;'>Quick-Wins / Actionable Recommendations:</h4>
-<ul style='font-family: "Open Sans", sans-serif; color: #444444; line-height: 1.5; font-size: 0.95rem; padding-left: 1.2rem; margin-top: 0;'>
-<li>Focus on <strong style='color: #90c274;'>{format_num(lhf_count)} Threshold Keywords (Low Hanging Fruits)</strong> on positions 11-15 ({lhf_sv} SV on page 2).</li>
-</ul>"""
-            story_title = "Executive Summary & Marketing Story"
-
-        kpi_col1, kpi_col2 = st.columns([5, 3])
-        with kpi_col1:
-            with st.container(border=True, key="exec_summary_container"):
-                st.markdown(f"""<h3 style='margin-top: 0; margin-bottom: 1rem; font-family: "Raleway", sans-serif; font-weight: 800; color: #232323;'>{story_title}</h3>{story_text}""", unsafe_allow_html=True)
-                def select_lhf_tab_sis():
-                    st.session_state["main_tabs"] = t["tab_lhf"]
-                    st.query_params["tab"] = "lhf"
-                    st.session_state["scroll_target"] = "low-hanging-fruits"
-                    st.session_state["show_custom_loader"] = True
-                def select_top3_tab_sis():
-                    st.session_state["main_tabs"] = t["tab_drops"]
-                    st.query_params["tab"] = "top3"
-                    st.session_state["scroll_target"] = "top3-drops"
-                    st.session_state["show_custom_loader"] = True
-                def select_top10_tab_sis():
-                    st.session_state["main_tabs"] = t["tab_drops"]
-                    st.query_params["tab"] = "top10"
-                    st.session_state["scroll_target"] = "top10-drops"
-                    st.session_state["show_custom_loader"] = True
-                b_col1, b_col2, b_col3 = st.columns(3)
-                with b_col1:
-                    label_t3 = "Top 3 Drops" if lang == "EN" else "Top 3 Abstürze"
-                    st.button(label_t3, key="goto_top3_btn", on_click=select_top3_tab_sis, type="secondary", use_container_width=True)
-                with b_col2:
-                    label_t10 = "Top 10 Drops" if lang == "EN" else "Top 10 Abstürze"
-                    st.button(label_t10, key="goto_top10_btn", on_click=select_top10_tab_sis, type="secondary", use_container_width=True)
-                with b_col3:
-                    st.button("Low Hanging Fruits", key="goto_lhf_btn", on_click=select_lhf_tab_sis, type="secondary", use_container_width=True)
-
-        with kpi_col2:
-            row1_col1, row1_col2 = st.columns(2)
-            with row1_col1:
-                st.metric(t["kpi_net_change_sv"], net_sv_val_str, delta=pct_sv_val_str)
-            with row1_col2:
-                st.metric(t["kpi_net_change"], net_clicks_val_str, delta=pct_clicks_val_str)
-            row2_col1, row2_col2 = st.columns(2)
-            with row2_col1:
-                st.metric(t["kpi_lost_total_sv"], loss_sv_val_str, delta=loss_sv_pct_str, delta_color="normal")
-            with row2_col2:
-                st.metric(t["kpi_gained_total_sv"], gain_sv_val_str, delta=gain_sv_pct_str, delta_color="normal")
-            row3_col1, row3_col2 = st.columns(2)
-            with row3_col1:
-                st.metric(t["kpi_top3_drops"], format_num(top3_count), delta=top3_loss_str, delta_color="normal")
-            with row3_col2:
-                st.metric(t["kpi_top10_drops"], format_num(top10_count), delta=top10_loss_str, delta_color="normal")
-            row4_col1, row4_col2 = st.columns(2)
-            with row4_col1:
-                st.metric(t["kpi_total_loss"], format_num(total_loss_count), delta=total_loss_loss_str, delta_color="normal", help=t.get("kpi_total_loss_help", ""))
-            with row4_col2:
-                st.metric(t["kpi_value_total"], value_val_str, delta=value_pct_str, delta_color="normal")
-            row5_col1, row5_col2 = st.columns(2)
-            with row5_col1:
-                st.metric(t["kpi_avg_pos_change"], avg_pos_change_val_str, delta=avg_pos_change_delta_str, delta_color="off")
-            with row5_col2:
-                st.metric(t["kpi_lhf"], format_num(lhf_count), delta=lhf_delta_str, delta_color="off", help=t["kpi_lhf_help_sistrix"])
-
-        st.markdown("<hr class='hr--grey'>", unsafe_allow_html=True)
-
-        viz_col1, viz_col2 = st.columns(2)
-        with viz_col1:
-            st.markdown("#### " + t["kpi_cluster_title"])
-            cluster_net = df.groupby('Cluster')['Metric Change'].sum().reset_index()
-            cluster_net = cluster_net[cluster_net['Cluster'] != "undefined"]
-            if not cluster_net.empty:
-                best_cluster = cluster_net.loc[cluster_net['Metric Change'].idxmax()]
-                worst_cluster = cluster_net.loc[cluster_net['Metric Change'].idxmin()]
-                best_pct = (best_cluster['Metric Change'] / total_metric_old * 100) if total_metric_old > 0 else 0.0
-                worst_pct = (worst_cluster['Metric Change'] / total_metric_old * 100) if total_metric_old > 0 else 0.0
-                best_sign = "+" if best_cluster['Metric Change'] > 0 else ""
-                worst_sign = "+" if worst_cluster['Metric Change'] > 0 else ""
-                best_pct_sign = "+" if best_pct > 0 else ""
-                worst_pct_sign = "+" if worst_pct > 0 else ""
-                best_delta = f"{best_sign}{format_num(int(best_cluster['Metric Change']))} SV ({best_pct_sign}{format_num(best_pct, 1)}{pct_sign})"
-                worst_delta = f"{worst_sign}{format_num(int(worst_cluster['Metric Change']))} SV ({worst_pct_sign}{format_num(worst_pct, 1)}{pct_sign})"
-                c1, c2 = st.columns(2)
-                with c1:
-                    st.metric(t["kpi_best_cluster"], best_cluster['Cluster'], delta=best_delta)
-                with c2:
-                    st.metric(t["kpi_worst_cluster"], worst_cluster['Cluster'], delta=worst_delta)
-                top_bottom = pd.concat([cluster_net.nlargest(3, 'Metric Change'), cluster_net.nsmallest(3, 'Metric Change')]).drop_duplicates().sort_values('Metric Change')
-                fig_net = px.bar(top_bottom, x='Metric Change', y='Cluster', orientation='h',
-                                 color='Metric Change', color_continuous_scale=[[0.0, '#d28063'], [0.5, '#ffed00'], [1.0, '#90c274']], height=200)
-                style_plotly_fig(fig_net)
-                fig_net.update_layout(margin=dict(l=10, r=10, t=25, b=10))
-                st.plotly_chart(fig_net, use_container_width=True)
-
-        with viz_col2:
-            st.markdown("#### " + t["kpi_top3_title"])
-            if not top3_drops.empty:
-                worst_top3 = top3_drops.nlargest(5, 'Metric Loss').sort_values('Metric Loss', ascending=True)
-                fig_t3 = px.bar(worst_top3, x='Metric Loss', y='Keyword', orientation='h',
-                                color_discrete_sequence=['#d28063'], height=270)
-                style_plotly_fig(fig_t3)
-                fig_t3.update_layout(margin=dict(l=10, r=10, t=25, b=10))
-                st.plotly_chart(fig_t3, use_container_width=True)
-            else:
-                st.info(t["rd_t3_empty"])
-
-        st.write("")
-        if intent_skipped:
-            st.info(t["intent_not_analyzed_msg"])
-        else:
-            viz_col3, viz_col4 = st.columns(2)
-            with viz_col3:
-                st.markdown("#### " + t["kpi_intent_title"])
-                intent_df = df.assign(Intent=df['Search Intent'].str.split(', ')).explode('Intent')
-                intent_counts = intent_df['Intent'].value_counts().reset_index()
-                intent_counts.columns = ['Search Intent', 'Count']
-                color_map = {"DO (Transactional)": "#90c274", "KNOW": "#2ea3f2",
-                             "regional:CITY": "#ffed00", "regional:COUNTRY": "#f29e2e", "undefined": "#dfdfdf"}
-                fig_pie = px.pie(intent_counts, values='Count', names='Search Intent',
-                                 color='Search Intent', color_discrete_map=color_map, hole=0.4, height=280)
-                style_plotly_fig(fig_pie)
-                fig_pie.update_layout(margin=dict(l=10, r=10, t=25, b=10))
-                st.plotly_chart(fig_pie, use_container_width=True)
-            with viz_col4:
-                st.markdown("#### Details")
-                intent_pct = intent_df['Intent'].value_counts(normalize=True).reset_index()
-                intent_pct.columns = ['Search Intent', 'Percentage']
-                intent_pct['Percentage'] = intent_pct['Percentage'] * 100
-                intent_summary = pd.merge(intent_counts, intent_pct, on='Search Intent')
-                col_intent = 'Search Intent' if lang == 'EN' else 'Suchintent'
-                col_count = 'Keywords (Count)' if lang == 'EN' else 'Keywords (Anzahl)'
-                col_share = 'Share (%)' if lang == 'EN' else 'Anteil (%)'
-                intent_summary.columns = [col_intent, col_count, col_share]
-                formatted_intent_summary = intent_summary.copy()
-                formatted_intent_summary[col_count] = formatted_intent_summary[col_count].apply(lambda x: format_num(x))
-                formatted_intent_summary[col_share] = formatted_intent_summary[col_share].apply(lambda x: f"{format_num(x, 1)}{pct_sign}")
-                st.write("")
-                st.dataframe(formatted_intent_summary, use_container_width=True, hide_index=True)
-
     st.markdown("<hr class='hr--grey'>", unsafe_allow_html=True)
 
-    # =========================================================================
     # TAB DEEP-LINK LOGIC (shared)
     # =========================================================================
     def on_tab_change():
@@ -1350,16 +957,207 @@ Comparing <strong>{date_range_str_old}</strong> to <strong>{date_range_str_new}<
         elif param_val == "drops":
             st.session_state["main_tabs"] = t["tab_drops"]
 
-    st.header("Details")
-
-    # =========================================================================
-    # DETAIL TABS — GSC
-    # =========================================================================
     if mode_key == "gsc":
-        tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
-            t["tab_cluster"], t["tab_drops"], t["tab_losses"],
+        tab_sum, tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+            t["tab_summary"], t["tab_cluster"], t["tab_drops"], t["tab_losses"],
             t["tab_lhf"], t["tab_winners"], t["tab_all"]
         ], key="main_tabs", on_change=on_tab_change)
+
+        with tab_sum:
+            st.header(t["kpi_header_gsc"])
+
+            total_clicks_lost = int(losers['Clicks Loss'].sum())
+            total_clicks_gained = int(winners['Clicks Gain'].sum())
+            net_clicks = total_clicks_gained - total_clicks_lost
+            lhf_impressions = int(low_hanging['Impressions_New'].sum())
+
+            total_clicks_old = df['Clicks_Old'].sum()
+            pct_change = (net_clicks / total_clicks_old * 100) if total_clicks_old > 0 else 0.0
+            if net_clicks > 0:
+                pct_change_formatted = f"+{format_num(pct_change, decimal_places=1)}{pct_sign}"
+            elif net_clicks < 0:
+                pct_change_formatted = f"{format_num(pct_change, decimal_places=1)}{pct_sign}"
+            else:
+                pct_change_formatted = f"{format_num(0.0, decimal_places=1)}{pct_sign}"
+
+            loss_val_str = f"-{format_num(total_clicks_lost)}"
+            gain_val_str = f"+{format_num(total_clicks_gained)}"
+            net_val_str = f"+{format_num(net_clicks)}" if net_clicks > 0 else format_num(net_clicks)
+            pct_val_str = pct_change_formatted
+
+            # Percentage differences for GSC lost and gained total clicks
+            loss_pct = (total_clicks_lost / total_clicks_old * 100) if total_clicks_old > 0 else 0.0
+            loss_pct_str = f"-{format_num(loss_pct, 1)}{pct_sign}"
+            gain_pct = (total_clicks_gained / total_clicks_old * 100) if total_clicks_old > 0 else 0.0
+            gain_pct_str = f"+{format_num(gain_pct, 1)}{pct_sign}"
+
+            top3_count = len(top3_drops)
+            top3_loss_val = int(top3_drops['Clicks Loss'].sum())
+            top3_pct = (top3_loss_val / total_clicks_old * 100) if total_clicks_old > 0 else 0.0
+            clicks_unit = "Klicks" if lang == "DE" else "clicks"
+            top3_loss_str = f"-{format_num(top3_loss_val)} {clicks_unit} (-{format_num(top3_pct, 1)}{pct_sign})"
+
+            top10_count = len(top10_drops)
+            top10_loss_val = int(top10_drops['Clicks Loss'].sum())
+            top10_pct = (top10_loss_val / total_clicks_old * 100) if total_clicks_old > 0 else 0.0
+            top10_loss_str = f"-{format_num(top10_loss_val)} {clicks_unit} (-{format_num(top10_pct, 1)}{pct_sign})"
+
+            lhf_count = len(low_hanging)
+            lhf_imp = format_num(lhf_impressions)
+            total_imp_new = df['Impressions_New'].sum()
+            lhf_pct = (lhf_impressions / total_imp_new * 100) if total_imp_new > 0 else 0.0
+            lhf_delta_str = f"+{lhf_imp} Imp. (+{format_num(lhf_pct, 1)}{pct_sign})"
+
+            # For backward compatibility in story_text
+            top3_loss = f"-{format_num(top3_loss_val)}"
+            top10_loss = f"-{format_num(top10_loss_val)}"
+
+            if lang == "DE":
+                story_text = f"""<p style='font-family: "Open Sans", sans-serif; color: #444444; line-height: 1.6; font-size: 0.95rem; margin-bottom: 1rem;'>
+    Im analysierten Zeitraum verzeichnete die Website eine
+    <strong style='color: #232323;'>Netto-Klick-Veränderung von <span style='color: {"#90c274" if net_clicks > 0 else "#d28063"}; font-weight: bold;'>{net_val_str}</span> ({pct_val_str})</strong>.
+    Dieser Wert setzt sich aus einem <strong>Gewinn von <span style='color: #90c274; font-weight: bold;'>{gain_val_str}</span> Klicks</strong>
+    und einem <strong>Verlust von <span style='color: #d28063; font-weight: bold;'>{loss_val_str}</span> Klicks</strong> zusammen.
+    </p>
+    <h4 style='font-family: "Raleway", sans-serif; font-weight: 700; color: #232323; margin-top: 1rem; margin-bottom: 0.5rem;'>Haupttreiber des Klick-Verlusts:</h4>
+    <ul style='font-family: "Open Sans", sans-serif; color: #444444; line-height: 1.5; font-size: 0.95rem; padding-left: 1.2rem; margin-top: 0;'>
+    <li style='margin-bottom: 0.5rem;'><strong>Abstürze aus den Top 3:</strong> <span style='font-weight: bold;'>{format_num(top3_count)} Keywords</span> sind aus den Top-Positionen (1-3) herausgerutscht. Verlust: <span style='color: #d28063; font-weight: bold;'>{top3_loss} Klicks</span>.</li>
+    <li style='margin-bottom: 0.5rem;'><strong>Abstürze aus den Top 10:</strong> <span style='font-weight: bold;'>{format_num(top10_count)} Keywords</span> haben die erste Suchergebnisseite verlassen. Verlust: <span style='color: #d28063; font-weight: bold;'>{top10_loss} Klicks</span>.</li>
+    </ul>
+    <h4 style='font-family: "Raleway", sans-serif; font-weight: 700; color: #232323; margin-top: 1rem; margin-bottom: 0.5rem;'>Quick-Wins / Handlungsempfehlungen:</h4>
+    <ul style='font-family: "Open Sans", sans-serif; color: #444444; line-height: 1.5; font-size: 0.95rem; padding-left: 1.2rem; margin-top: 0;'>
+    <li>Es wurden <strong style='color: #90c274;'>{format_num(lhf_count)} Schwellen-Keywords (Low Hanging Fruits)</strong> auf den Positionen 11-15 identifiziert. Diese erzielen aktuell bereits <span style='font-weight: bold;'>{lhf_imp} Impressionen</span> auf Seite 2. Durch gezielte On-Page-Optimierung können diese schnell auf Seite 1 geschoben werden.</li>
+    </ul>"""
+                story_title = "Executive Summary & Marketing-Story"
+            else:
+                story_text = f"""<p style='font-family: "Open Sans", sans-serif; color: #444444; line-height: 1.6; font-size: 0.95rem; margin-bottom: 1rem;'>
+    During the analyzed timeframe, the website recorded a
+    <strong style='color: #232323;'>Net Click Change of <span style='color: {"#90c274" if net_clicks > 0 else "#d28063"}; font-weight: bold;'>{net_val_str}</span> ({pct_val_str})</strong>.
+    This value is composed of a <strong>gain of <span style='color: #90c274; font-weight: bold;'>{gain_val_str}</span> clicks</strong>
+    and a <strong>loss of <span style='color: #d28063; font-weight: bold;'>{loss_val_str}</span> clicks</strong>.
+    </p>
+    <h4 style='font-family: "Raleway", sans-serif; font-weight: 700; color: #232323; margin-top: 1rem; margin-bottom: 0.5rem;'>Main Drivers of Click Loss:</h4>
+    <ul style='font-family: "Open Sans", sans-serif; color: #444444; line-height: 1.5; font-size: 0.95rem; padding-left: 1.2rem; margin-top: 0;'>
+    <li style='margin-bottom: 0.5rem;'><strong>Drops from Top 3:</strong> <span style='font-weight: bold;'>{format_num(top3_count)} keywords</span> slipped out of the top positions (1-3). This caused a loss of <span style='color: #d28063; font-weight: bold;'>{top3_loss} clicks</span>.</li>
+    <li style='margin-bottom: 0.5rem;'><strong>Drops from Top 10:</strong> <span style='font-weight: bold;'>{format_num(top10_count)} keywords</span> fell off page 1, resulting in a loss of <span style='color: #d28063; font-weight: bold;'>{top10_loss} clicks</span>.</li>
+    </ul>
+    <h4 style='font-family: "Raleway", sans-serif; font-weight: 700; color: #232323; margin-top: 1rem; margin-bottom: 0.5rem;'>Quick-Wins / Actionable Recommendations:</h4>
+    <ul style='font-family: "Open Sans", sans-serif; color: #444444; line-height: 1.5; font-size: 0.95rem; padding-left: 1.2rem; margin-top: 0;'>
+    <li>We identified <strong style='color: #90c274;'>{format_num(lhf_count)} Threshold Keywords (Low Hanging Fruits)</strong> ranking on positions 11-15. These already generate <span style='font-weight: bold;'>{lhf_imp} impressions</span> on page 2. Targeted on-page optimization can push these onto page 1 quickly.</li>
+    </ul>"""
+                story_title = "Executive Summary & Marketing Story"
+
+            kpi_col1, kpi_col2 = st.columns([5, 3])
+            with kpi_col1:
+                with st.container(border=True, key="gsc_exec_summary_container"):
+                    st.markdown(f"""<h3 style='margin-top: 0; margin-bottom: 1rem; font-family: "Raleway", sans-serif; font-weight: 800; color: #232323;'>{story_title}</h3>{story_text}""", unsafe_allow_html=True)
+                    def select_lhf_tab_gsc():
+                        st.session_state["main_tabs"] = t["tab_lhf"]
+                        st.query_params["tab"] = "lhf"
+                        st.session_state["scroll_target"] = "low-hanging-fruits"
+                        st.session_state["show_custom_loader"] = True
+                    def select_top3_tab_gsc():
+                        st.session_state["main_tabs"] = t["tab_drops"]
+                        st.query_params["tab"] = "top3"
+                        st.session_state["scroll_target"] = "top3-drops"
+                        st.session_state["show_custom_loader"] = True
+                    def select_top10_tab_gsc():
+                        st.session_state["main_tabs"] = t["tab_drops"]
+                        st.query_params["tab"] = "top10"
+                        st.session_state["scroll_target"] = "top10-drops"
+                        st.session_state["show_custom_loader"] = True
+                    b_col1, b_col2, b_col3 = st.columns(3)
+                    with b_col1:
+                        st.button("🔍 Top 3 Drops", key="goto_top3_btn", on_click=select_top3_tab_gsc, type="secondary", use_container_width=True)
+                    with b_col2:
+                        st.button("🔍 Top 10 Drops", key="goto_top10_btn", on_click=select_top10_tab_gsc, type="secondary", use_container_width=True)
+                    with b_col3:
+                        st.button("🎯 Low Hanging Fruits", key="goto_lhf_btn", on_click=select_lhf_tab_gsc, type="secondary", use_container_width=True)
+
+            with kpi_col2:
+                st.metric(t["kpi_net_change"], net_val_str, delta=pct_val_str)
+                sub_c1, sub_c2 = st.columns(2)
+                with sub_c1:
+                    st.metric(t["kpi_lost_total"], loss_val_str, delta=loss_pct_str, delta_color="normal")
+                with sub_c2:
+                    st.metric(t["kpi_gained_total"], gain_val_str, delta=gain_pct_str, delta_color="normal")
+                sub_c3, sub_c4 = st.columns(2)
+                with sub_c3:
+                    st.metric(t["kpi_top3_drops"], format_num(top3_count), delta=top3_loss_str, delta_color="normal")
+                with sub_c4:
+                    st.metric(t["kpi_top10_drops"], format_num(top10_count), delta=top10_loss_str, delta_color="normal")
+                st.metric(t["kpi_lhf"], format_num(lhf_count), delta=lhf_delta_str, delta_color="off", help=t["kpi_lhf_help_gsc"])
+
+            st.markdown("<hr class='hr--grey'>", unsafe_allow_html=True)
+
+            viz_col1, viz_col2 = st.columns(2)
+            with viz_col1:
+                st.markdown("#### " + t["kpi_cluster_title"])
+                cluster_net = df.groupby('Cluster')['Clicks Change'].sum().reset_index()
+                cluster_net = cluster_net[cluster_net['Cluster'] != "undefined"]
+                if not cluster_net.empty:
+                    best_cluster = cluster_net.loc[cluster_net['Clicks Change'].idxmax()]
+                    worst_cluster = cluster_net.loc[cluster_net['Clicks Change'].idxmin()]
+                    best_val = best_cluster['Clicks Change']
+                    best_delta = f"+{format_num(best_val)} {t['clicks']}" if best_val > 0 else f"{format_num(best_val)} {t['clicks']}"
+                    worst_val = worst_cluster['Clicks Change']
+                    worst_delta = f"+{format_num(worst_val)} {t['clicks']}" if worst_val > 0 else f"{format_num(worst_val)} {t['clicks']}"
+                    c1, c2 = st.columns(2)
+                    with c1:
+                        st.metric(t["kpi_best_cluster"], best_cluster['Cluster'], best_delta)
+                    with c2:
+                        st.metric(t["kpi_worst_cluster"], worst_cluster['Cluster'], worst_delta)
+                    top_bottom = pd.concat([cluster_net.nlargest(3, 'Clicks Change'), cluster_net.nsmallest(3, 'Clicks Change')]).drop_duplicates().sort_values('Clicks Change')
+                    fig_net = px.bar(top_bottom, x='Clicks Change', y='Cluster', orientation='h',
+                                     color='Clicks Change', color_continuous_scale=[[0.0, '#d28063'], [0.5, '#ffed00'], [1.0, '#90c274']], height=200)
+                    style_plotly_fig(fig_net)
+                    fig_net.update_layout(margin=dict(l=10, r=10, t=25, b=10))
+                    st.plotly_chart(fig_net, use_container_width=True)
+
+            with viz_col2:
+                st.markdown("#### " + t["kpi_top3_title"])
+                if not top3_drops.empty:
+                    worst_top3 = top3_drops.nlargest(5, 'Clicks Loss').sort_values('Clicks Loss', ascending=True)
+                    fig_t3 = px.bar(worst_top3, x='Clicks Loss', y='Keyword', orientation='h',
+                                    color_discrete_sequence=['#d28063'], height=270)
+                    style_plotly_fig(fig_t3)
+                    fig_t3.update_layout(margin=dict(l=10, r=10, t=25, b=10))
+                    st.plotly_chart(fig_t3, use_container_width=True)
+                else:
+                    st.info(t["rd_t3_empty"])
+
+            if not intent_skipped:
+                viz_col3, viz_col4 = st.columns(2)
+                with viz_col3:
+                    st.markdown("#### " + t["kpi_intent_title"])
+                    intent_df = df.assign(Intent=df['Search Intent'].str.split(', ')).explode('Intent')
+                    intent_counts = intent_df['Intent'].value_counts().reset_index()
+                    intent_counts.columns = ['Search Intent', 'Count']
+                    color_map = {"DO (Transactional)": "#90c274", "KNOW": "#2ea3f2",
+                                 "regional:CITY": "#ffed00", "regional:COUNTRY": "#f29e2e", "undefined": "#dfdfdf"}
+                    fig_pie = px.pie(intent_counts, values='Count', names='Search Intent',
+                                     color='Search Intent', color_discrete_map=color_map, hole=0.4, height=280)
+                    style_plotly_fig(fig_pie)
+                    fig_pie.update_layout(margin=dict(l=10, r=10, t=25, b=10))
+                    st.plotly_chart(fig_pie, use_container_width=True)
+                with viz_col4:
+                    st.markdown("#### Details")
+                    intent_pct = intent_df['Intent'].value_counts(normalize=True).reset_index()
+                    intent_pct.columns = ['Search Intent', 'Percentage']
+                    intent_pct['Percentage'] = intent_pct['Percentage'] * 100
+                    intent_summary = pd.merge(intent_counts, intent_pct, on='Search Intent')
+                    col_intent = 'Search Intent' if lang == 'EN' else 'Suchintent'
+                    col_count = 'Keywords (Count)' if lang == 'EN' else 'Keywords (Anzahl)'
+                    col_share = 'Share (%)' if lang == 'EN' else 'Anteil (%)'
+                    intent_summary.columns = [col_intent, col_count, col_share]
+                    formatted_intent_summary = intent_summary.copy()
+                    formatted_intent_summary[col_count] = formatted_intent_summary[col_count].apply(lambda x: format_num(x))
+                    formatted_intent_summary[col_share] = formatted_intent_summary[col_share].apply(lambda x: f"{format_num(x, 1)}{pct_sign}")
+                    st.write("")
+                    st.dataframe(formatted_intent_summary, use_container_width=True, hide_index=True)
+            else:
+                st.info(t["intent_not_analyzed_msg"])
+
 
         with tab1:
             st.subheader(t["cl_sub"])
@@ -1432,7 +1230,36 @@ Comparing <strong>{date_range_str_old}</strong> to <strong>{date_range_str_new}<
             st.subheader(t["lhf_sub"], anchor="low-hanging-fruits")
             st.markdown(t["lhf_desc_gsc"])
             if not low_hanging.empty:
-                display_styled_dataframe(low_hanging[['Keyword', 'Position Change', 'Position_Old', 'Position_New', 'Impressions_New', 'Clicks_New']], sort_col='Impressions_New')
+                lhf_df = low_hanging.copy()
+                lhf_df[['Potential Score', 'Difficulty']] = lhf_df.apply(calculate_lhf_gsc, axis=1)
+                cols_to_show = ['Keyword', 'Difficulty', 'Potential Score', 'Position Change', 'Position_Old', 'Position_New', 'Impressions_New', 'Clicks_New']
+                styler = lhf_df[cols_to_show].sort_values('Impressions_New', ascending=False).style
+                format_dict = {}
+                format_dict['Potential Score'] = lambda x: f"{x:.1f}"
+                for c in ['Impressions_New', 'Clicks_New']:
+                    format_dict[c] = lambda x: format_num(x) if pd.notnull(x) else ""
+                for c in ['Position_Old', 'Position_New']:
+                    format_dict[c] = lambda x: "-" if pd.notnull(x) and x == 101 else (format_num(x, 2) if pd.notnull(x) else "")
+                styler = styler.map(lambda x: 'color: #90c274; font-weight: bold;' if pd.notnull(x) and x > 0 else ('color: #d28063; font-weight: bold;' if pd.notnull(x) and x < 0 else ''), subset=['Position Change'])
+                format_dict['Position Change'] = lambda x: f"▲ +{format_num(abs(x), 2)}" if pd.notnull(x) and x > 0 else (f"▼ -{format_num(abs(x), 2)}" if pd.notnull(x) and x < 0 else format_num(0.0, 2))
+                styler = styler.format(format_dict)
+                st.dataframe(
+                    styler,
+                    column_config={
+                        "Potential Score": st.column_config.ProgressColumn(
+                            "Potential Score",
+                            help=t.get("lhf_pot_help", "Calculated potential (0-10)"),
+                            format="%.1f",
+                            min_value=0.0,
+                            max_value=10.0,
+                        ),
+                        "Difficulty": st.column_config.TextColumn(
+                            t.get("lhf_diff_label", "Difficulty"),
+                            help=t.get("lhf_diff_help", "Estimated difficulty")
+                        )
+                    },
+                    use_container_width=True
+                )
             else:
                 st.info(t["lhf_empty"])
 
@@ -1486,14 +1313,264 @@ Comparing <strong>{date_range_str_old}</strong> to <strong>{date_range_str_new}<
                 f_df = f_df[f_df['Keyword'].astype(str).str.lower().str.contains(search_kw.lower(), na=False)]
             display_styled_dataframe(f_df, sort_col='Clicks Change', ascending=False)
 
-    # =========================================================================
-    # DETAIL TABS — SISTRIX
-    # =========================================================================
     elif mode_key == "sistrix":
-        tab_d, tab1, tab2, tab3, tab4, tab5 = st.tabs([
-            t["tab_dir"], t["tab_cluster"], t["tab_drops"],
+        tab_sum, tab_d, tab1, tab2, tab3, tab4, tab5 = st.tabs([
+            t["tab_summary"], t["tab_dir"], t["tab_cluster"], t["tab_drops"],
             t["tab_lhf"], t["tab_winners"], t["tab_all"]
         ], key="main_tabs", on_change=on_tab_change)
+
+        with tab_sum:
+            st.header(t["kpi_header_sistrix"])
+
+            gained_keywords_count = int((df['Position Change'] > 0).sum())
+            lost_keywords_count = int((df['Position Change'] < 0).sum())
+            avg_gain_pos = df[df['Position Change'] > 0]['Position Change'].mean()
+            if pd.isnull(avg_gain_pos): avg_gain_pos = 0.0
+            avg_loss_pos = abs(df[df['Position Change'] < 0]['Position Change'].mean())
+            if pd.isnull(avg_loss_pos): avg_loss_pos = 0.0
+            avg_pos_change = df['Position Change'].mean()
+            if pd.isnull(avg_pos_change): avg_pos_change = 0.0
+
+            gained_keywords_sv = df[df['Position Change'] > 0]['Search Volume'].sum()
+            lost_keywords_sv = df[df['Position Change'] < 0]['Search Volume'].sum()
+            total_sv = df['Search Volume'].sum()
+            total_sv_old = total_sv
+            total_metric_old = total_sv_old
+
+            total_sv_loss = losers['Search Volume'].sum()
+            total_sv_gained = winners['Search Volume'].sum()
+            net_sv = total_sv_gained - total_sv_loss
+            pct_sv_change = (net_sv / total_sv_old * 100) if total_sv_old > 0 else 0.0
+
+            net_sv_sign = "+" if net_sv > 0 else ""
+            net_sv_val_str = f"{net_sv_sign}{format_num(int(net_sv))} SV"
+            pct_sv_val_str = f"{net_sv_sign}{format_num(pct_sv_change, 1)}{pct_sign}"
+            loss_sv_pct_str = f"-{format_num(total_sv_loss / total_sv_old * 100 if total_sv_old > 0 else 0.0, 1)}{pct_sign}"
+            gain_sv_pct_str = f"+{format_num(total_sv_gained / total_sv_old * 100 if total_sv_old > 0 else 0.0, 1)}{pct_sign}"
+            loss_sv_val_str = f"-{format_num(int(total_sv_loss))} SV"
+            gain_sv_val_str = f"+{format_num(int(total_sv_gained))} SV"
+
+            total_clicks_old = df['Traffic#1'].sum()
+            total_clicks_loss = df['Traffic Loss'].clip(lower=0).sum()
+            total_clicks_gain = df['Traffic Gain'].clip(lower=0).sum()
+            net_clicks = total_clicks_gain - total_clicks_loss
+            pct_clicks_change = (net_clicks / total_clicks_old * 100) if total_clicks_old > 0 else 0.0
+            clicks_unit = "Klicks" if lang == "DE" else "clicks"
+            net_clicks_sign = "+" if net_clicks > 0 else ""
+            net_clicks_val_str = f"{net_clicks_sign}{format_num(int(net_clicks))} {clicks_unit}"
+            pct_clicks_val_str = f"{net_clicks_sign}{format_num(pct_clicks_change, 1)}{pct_sign}"
+
+            total_value_old = (df['Traffic#1'] * df['CPC']).sum()
+            total_value_loss = df['Lost Value €'].sum()
+            pct_value_change = (total_value_loss / total_value_old * 100) if total_value_old > 0 else 0.0
+            value_val_str = f"-{format_num(total_value_loss, 2)} €" if lang == "DE" else f"-€{format_num(total_value_loss, 2)}"
+            value_pct_str = f"-{format_num(pct_value_change, 1)}{pct_sign}"
+
+            top3_count = len(top3_drops)
+            top3_loss_val = top3_drops['Search Volume'].sum()
+            top3_pct = (top3_loss_val / total_sv_old * 100) if total_sv_old > 0 else 0.0
+            top3_loss_str = f"-{format_num(int(top3_loss_val))} SV (-{format_num(top3_pct, 1)}{pct_sign})"
+            top3_loss_only = f"{format_num(int(top3_loss_val))} SV"
+
+            top10_count = len(top10_drops)
+            top10_loss_val = top10_drops['Search Volume'].sum()
+            top10_pct = (top10_loss_val / total_sv_old * 100) if total_sv_old > 0 else 0.0
+            top10_loss_str = f"-{format_num(int(top10_loss_val))} SV (-{format_num(top10_pct, 1)}{pct_sign})"
+            top10_loss_only = f"{format_num(int(top10_loss_val))} SV"
+
+            total_loss_count = len(total_loss)
+            total_loss_loss_val = total_loss['Search Volume'].sum()
+            total_loss_pct = (total_loss_loss_val / total_sv_old * 100) if total_sv_old > 0 else 0.0
+            total_loss_loss_str = f"-{format_num(int(total_loss_loss_val))} SV (-{format_num(total_loss_pct, 1)}{pct_sign})"
+            total_loss_loss_only = f"{format_num(int(total_loss_loss_val))} SV"
+
+            lhf_count = len(low_hanging)
+            lhf_search_vol = int(low_hanging['Search Volume'].sum())
+            lhf_sv = format_num(lhf_search_vol)
+            lhf_pct = (lhf_search_vol / total_sv_old * 100) if total_sv_old > 0 else 0.0
+            lhf_delta_str = f"+{lhf_sv} SV (+{format_num(lhf_pct, 1)}{pct_sign})"
+
+            avg_pos_change_sign = "+" if avg_pos_change > 0 else ""
+            avg_pos_change_val_str = f"{avg_pos_change_sign}{format_num(avg_pos_change, 2)}"
+            avg_pos_change_delta_str = f"+{gained_keywords_count} / -{lost_keywords_count} KWs"
+
+            date_range_str_old = date_old.strftime('%d.%m.%Y')
+            date_range_str_new = date_new.strftime('%d.%m.%Y')
+
+            if lang == "DE":
+                story_text = f"""<p style='font-family: "Open Sans", sans-serif; color: #444444; line-height: 1.6; font-size: 0.95rem; margin-bottom: 1rem;'>
+    Im Vergleich vom <strong>{date_range_str_old}</strong> zum <strong>{date_range_str_new}</strong> verzeichnete Ihre Website folgende Ranking-Entwicklungen:
+    </p>
+    <h4 style='font-family: "Raleway", sans-serif; font-weight: 700; color: #232323; margin-top: 1rem; margin-bottom: 0.5rem;'>Ranking-Veränderungen (Positions-Daten):</h4>
+    <ul style='font-family: "Open Sans", sans-serif; color: #444444; line-height: 1.5; font-size: 0.95rem; padding-left: 1.2rem; margin-top: 0;'>
+    <li style='margin-bottom: 0.5rem;'><strong>Positions-Gewinne:</strong> <span style='font-weight: bold;'>{format_num(gained_keywords_count)} Keywords</span> verbessert (Ø <span style='color: #90c274; font-weight: bold;'>+{format_num(avg_gain_pos, 1)} Positionen</span>, Gesamt-SV: <span style='font-weight: bold;'>{format_num(gained_keywords_sv)} SV</span>).</li>
+    <li style='margin-bottom: 0.5rem;'><strong>Positions-Verluste:</strong> <span style='font-weight: bold;'>{format_num(lost_keywords_count)} Keywords</span> verschlechtert (Ø <span style='color: #d28063; font-weight: bold;'>-{format_num(avg_loss_pos, 1)} Positionen</span>, Gesamt-SV: <span style='font-weight: bold;'>{format_num(lost_keywords_sv)} SV</span>).</li>
+    <li style='margin-bottom: 0.5rem;'><strong>Gesamt-Tendenz:</strong> Ø Positions-Veränderung: <span style='font-weight: bold; color: {"#90c274" if avg_pos_change > 0 else "#d28063"};'>{avg_pos_change_sign}{format_num(avg_pos_change, 2)} Positionen</span> (Gesamt-SV: <span style='font-weight: bold;'>{format_num(total_sv)} SV</span>).</li>
+    </ul>
+    <h4 style='font-family: "Raleway", sans-serif; font-weight: 700; color: #232323; margin-top: 1rem; margin-bottom: 0.5rem;'>Haupttreiber der Ranking-Abstürze:</h4>
+    <ul style='font-family: "Open Sans", sans-serif; color: #444444; line-height: 1.5; font-size: 0.95rem; padding-left: 1.2rem; margin-top: 0;'>
+    <li style='margin-bottom: 0.5rem;'><strong>Abstürze aus den Top 3:</strong> <span style='font-weight: bold;'>{format_num(top3_count)} Keywords</span> verloren Top-Positionen (Verlust: <span style='color: #d28063; font-weight: bold;'>{top3_loss_only}</span>).</li>
+    <li style='margin-bottom: 0.5rem;'><strong>Abstürze aus den Top 10:</strong> Weitere <span style='font-weight: bold;'>{format_num(top10_count)} Keywords</span> fielen von Seite 1 (Verlust: <span style='color: #d28063; font-weight: bold;'>{top10_loss_only}</span>).</li>
+    <li style='margin-bottom: 0.5rem;'><strong>Vollständige Ranking-Verluste:</strong> <span style='font-weight: bold;'>{format_num(total_loss_count)} Keywords</span> komplett aus den Top 100 herausgefallen (Verlust: <span style='color: #d28063; font-weight: bold;'>{total_loss_loss_only}</span>).</li>
+    </ul>
+    <h4 style='font-family: "Raleway", sans-serif; font-weight: 700; color: #232323; margin-top: 1rem; margin-bottom: 0.5rem;'>Quick-Wins / Handlungsempfehlungen:</h4>
+    <ul style='font-family: "Open Sans", sans-serif; color: #444444; line-height: 1.5; font-size: 0.95rem; padding-left: 1.2rem; margin-top: 0;'>
+    <li>Ich empfehle On-Page-Optimierung für die <strong style='color: #90c274;'>{format_num(lhf_count)} Schwellen-Keywords (Low Hanging Fruits)</strong> auf den Positionen 11-15 ({lhf_sv} SV auf Seite 2).</li>
+    </ul>"""
+                story_title = "Executive Summary & Marketing-Story"
+            else:
+                story_text = f"""<p style='font-family: "Open Sans", sans-serif; color: #444444; line-height: 1.6; font-size: 0.95rem; margin-bottom: 1rem;'>
+    Comparing <strong>{date_range_str_old}</strong> to <strong>{date_range_str_new}</strong>, your website recorded the following ranking developments:
+    </p>
+    <h4 style='font-family: "Raleway", sans-serif; font-weight: 700; color: #232323; margin-top: 1rem; margin-bottom: 0.5rem;'>Ranking Changes (Position Data):</h4>
+    <ul style='font-family: "Open Sans", sans-serif; color: #444444; line-height: 1.5; font-size: 0.95rem; padding-left: 1.2rem; margin-top: 0;'>
+    <li style='margin-bottom: 0.5rem;'><strong>Position Gains:</strong> <span style='font-weight: bold;'>{format_num(gained_keywords_count)} keywords</span> improved (avg. <span style='color: #90c274; font-weight: bold;'>+{format_num(avg_gain_pos, 1)} positions</span>, total SV: <span style='font-weight: bold;'>{format_num(gained_keywords_sv)} SV</span>).</li>
+    <li style='margin-bottom: 0.5rem;'><strong>Position Losses:</strong> <span style='font-weight: bold;'>{format_num(lost_keywords_count)} keywords</span> deteriorated (avg. <span style='color: #d28063; font-weight: bold;'>-{format_num(avg_loss_pos, 1)} positions</span>, total SV: <span style='font-weight: bold;'>{format_num(lost_keywords_sv)} SV</span>).</li>
+    <li style='margin-bottom: 0.5rem;'><strong>Overall Trend:</strong> Avg. position change: <span style='font-weight: bold; color: {"#90c274" if avg_pos_change > 0 else "#d28063"};'>{avg_pos_change_sign}{format_num(avg_pos_change, 2)} positions</span> (total SV: <span style='font-weight: bold;'>{format_num(total_sv)} SV</span>).</li>
+    </ul>
+    <h4 style='font-family: "Raleway", sans-serif; font-weight: 700; color: #232323; margin-top: 1rem; margin-bottom: 0.5rem;'>Main Drivers of Ranking Drops:</h4>
+    <ul style='font-family: "Open Sans", sans-serif; color: #444444; line-height: 1.5; font-size: 0.95rem; padding-left: 1.2rem; margin-top: 0;'>
+    <li style='margin-bottom: 0.5rem;'><strong>Drops from Top 3:</strong> <span style='font-weight: bold;'>{format_num(top3_count)} keywords</span> lost top positions (loss of <span style='color: #d28063; font-weight: bold;'>{top3_loss_only}</span>).</li>
+    <li style='margin-bottom: 0.5rem;'><strong>Drops from Top 10:</strong> <span style='font-weight: bold;'>{format_num(top10_count)} keywords</span> fell off page 1 (loss of <span style='color: #d28063; font-weight: bold;'>{top10_loss_only}</span>).</li>
+    <li style='margin-bottom: 0.5rem;'><strong>Complete Losses:</strong> <span style='font-weight: bold;'>{format_num(total_loss_count)} keywords</span> dropped out of the Top 100 (loss of <span style='color: #d28063; font-weight: bold;'>{total_loss_loss_only}</span>).</li>
+    </ul>
+    <h4 style='font-family: "Raleway", sans-serif; font-weight: 700; color: #232323; margin-top: 1rem; margin-bottom: 0.5rem;'>Quick-Wins / Actionable Recommendations:</h4>
+    <ul style='font-family: "Open Sans", sans-serif; color: #444444; line-height: 1.5; font-size: 0.95rem; padding-left: 1.2rem; margin-top: 0;'>
+    <li>Focus on <strong style='color: #90c274;'>{format_num(lhf_count)} Threshold Keywords (Low Hanging Fruits)</strong> on positions 11-15 ({lhf_sv} SV on page 2).</li>
+    </ul>"""
+                story_title = "Executive Summary & Marketing Story"
+
+            kpi_col1, kpi_col2 = st.columns([5, 3])
+            with kpi_col1:
+                with st.container(border=True, key="exec_summary_container"):
+                    st.markdown(f"""<h3 style='margin-top: 0; margin-bottom: 1rem; font-family: "Raleway", sans-serif; font-weight: 800; color: #232323;'>{story_title}</h3>{story_text}""", unsafe_allow_html=True)
+                    def select_lhf_tab_sis():
+                        st.session_state["main_tabs"] = t["tab_lhf"]
+                        st.query_params["tab"] = "lhf"
+                        st.session_state["scroll_target"] = "low-hanging-fruits"
+                        st.session_state["show_custom_loader"] = True
+                    def select_top3_tab_sis():
+                        st.session_state["main_tabs"] = t["tab_drops"]
+                        st.query_params["tab"] = "top3"
+                        st.session_state["scroll_target"] = "top3-drops"
+                        st.session_state["show_custom_loader"] = True
+                    def select_top10_tab_sis():
+                        st.session_state["main_tabs"] = t["tab_drops"]
+                        st.query_params["tab"] = "top10"
+                        st.session_state["scroll_target"] = "top10-drops"
+                        st.session_state["show_custom_loader"] = True
+                    b_col1, b_col2, b_col3 = st.columns(3)
+                    with b_col1:
+                        label_t3 = "Top 3 Drops" if lang == "EN" else "Top 3 Abstürze"
+                        st.button(label_t3, key="goto_top3_btn", on_click=select_top3_tab_sis, type="secondary", use_container_width=True)
+                    with b_col2:
+                        label_t10 = "Top 10 Drops" if lang == "EN" else "Top 10 Abstürze"
+                        st.button(label_t10, key="goto_top10_btn", on_click=select_top10_tab_sis, type="secondary", use_container_width=True)
+                    with b_col3:
+                        st.button("Low Hanging Fruits", key="goto_lhf_btn", on_click=select_lhf_tab_sis, type="secondary", use_container_width=True)
+
+            with kpi_col2:
+                row1_col1, row1_col2 = st.columns(2)
+                with row1_col1:
+                    st.metric(t["kpi_net_change_sv"], net_sv_val_str, delta=pct_sv_val_str)
+                with row1_col2:
+                    st.metric(t["kpi_net_change"], net_clicks_val_str, delta=pct_clicks_val_str)
+                row2_col1, row2_col2 = st.columns(2)
+                with row2_col1:
+                    st.metric(t["kpi_lost_total_sv"], loss_sv_val_str, delta=loss_sv_pct_str, delta_color="normal")
+                with row2_col2:
+                    st.metric(t["kpi_gained_total_sv"], gain_sv_val_str, delta=gain_sv_pct_str, delta_color="normal")
+                row3_col1, row3_col2 = st.columns(2)
+                with row3_col1:
+                    st.metric(t["kpi_top3_drops"], format_num(top3_count), delta=top3_loss_str, delta_color="normal")
+                with row3_col2:
+                    st.metric(t["kpi_top10_drops"], format_num(top10_count), delta=top10_loss_str, delta_color="normal")
+                row4_col1, row4_col2 = st.columns(2)
+                with row4_col1:
+                    st.metric(t["kpi_total_loss"], format_num(total_loss_count), delta=total_loss_loss_str, delta_color="normal", help=t.get("kpi_total_loss_help", ""))
+                with row4_col2:
+                    st.metric(t["kpi_value_total"], value_val_str, delta=value_pct_str, delta_color="normal")
+                row5_col1, row5_col2 = st.columns(2)
+                with row5_col1:
+                    st.metric(t["kpi_avg_pos_change"], avg_pos_change_val_str, delta=avg_pos_change_delta_str, delta_color="off")
+                with row5_col2:
+                    st.metric(t["kpi_lhf"], format_num(lhf_count), delta=lhf_delta_str, delta_color="off", help=t["kpi_lhf_help_sistrix"])
+
+            st.markdown("<hr class='hr--grey'>", unsafe_allow_html=True)
+
+            viz_col1, viz_col2 = st.columns(2)
+            with viz_col1:
+                st.markdown("#### " + t["kpi_cluster_title"])
+                cluster_net = df.groupby('Cluster')['Metric Change'].sum().reset_index()
+                cluster_net = cluster_net[cluster_net['Cluster'] != "undefined"]
+                if not cluster_net.empty:
+                    best_cluster = cluster_net.loc[cluster_net['Metric Change'].idxmax()]
+                    worst_cluster = cluster_net.loc[cluster_net['Metric Change'].idxmin()]
+                    best_pct = (best_cluster['Metric Change'] / total_metric_old * 100) if total_metric_old > 0 else 0.0
+                    worst_pct = (worst_cluster['Metric Change'] / total_metric_old * 100) if total_metric_old > 0 else 0.0
+                    best_sign = "+" if best_cluster['Metric Change'] > 0 else ""
+                    worst_sign = "+" if worst_cluster['Metric Change'] > 0 else ""
+                    best_pct_sign = "+" if best_pct > 0 else ""
+                    worst_pct_sign = "+" if worst_pct > 0 else ""
+                    best_delta = f"{best_sign}{format_num(int(best_cluster['Metric Change']))} SV ({best_pct_sign}{format_num(best_pct, 1)}{pct_sign})"
+                    worst_delta = f"{worst_sign}{format_num(int(worst_cluster['Metric Change']))} SV ({worst_pct_sign}{format_num(worst_pct, 1)}{pct_sign})"
+                    c1, c2 = st.columns(2)
+                    with c1:
+                        st.metric(t["kpi_best_cluster"], best_cluster['Cluster'], delta=best_delta)
+                    with c2:
+                        st.metric(t["kpi_worst_cluster"], worst_cluster['Cluster'], delta=worst_delta)
+                    top_bottom = pd.concat([cluster_net.nlargest(3, 'Metric Change'), cluster_net.nsmallest(3, 'Metric Change')]).drop_duplicates().sort_values('Metric Change')
+                    fig_net = px.bar(top_bottom, x='Metric Change', y='Cluster', orientation='h',
+                                     color='Metric Change', color_continuous_scale=[[0.0, '#d28063'], [0.5, '#ffed00'], [1.0, '#90c274']], height=200)
+                    style_plotly_fig(fig_net)
+                    fig_net.update_layout(margin=dict(l=10, r=10, t=25, b=10))
+                    st.plotly_chart(fig_net, use_container_width=True)
+
+            with viz_col2:
+                st.markdown("#### " + t["kpi_top3_title"])
+                if not top3_drops.empty:
+                    worst_top3 = top3_drops.nlargest(5, 'Metric Loss').sort_values('Metric Loss', ascending=True)
+                    fig_t3 = px.bar(worst_top3, x='Metric Loss', y='Keyword', orientation='h',
+                                    color_discrete_sequence=['#d28063'], height=270)
+                    style_plotly_fig(fig_t3)
+                    fig_t3.update_layout(margin=dict(l=10, r=10, t=25, b=10))
+                    st.plotly_chart(fig_t3, use_container_width=True)
+                else:
+                    st.info(t["rd_t3_empty"])
+
+            st.write("")
+            if intent_skipped:
+                st.info(t["intent_not_analyzed_msg"])
+            else:
+                viz_col3, viz_col4 = st.columns(2)
+                with viz_col3:
+                    st.markdown("#### " + t["kpi_intent_title"])
+                    intent_df = df.assign(Intent=df['Search Intent'].str.split(', ')).explode('Intent')
+                    intent_counts = intent_df['Intent'].value_counts().reset_index()
+                    intent_counts.columns = ['Search Intent', 'Count']
+                    color_map = {"DO (Transactional)": "#90c274", "KNOW": "#2ea3f2",
+                                 "regional:CITY": "#ffed00", "regional:COUNTRY": "#f29e2e", "undefined": "#dfdfdf"}
+                    fig_pie = px.pie(intent_counts, values='Count', names='Search Intent',
+                                     color='Search Intent', color_discrete_map=color_map, hole=0.4, height=280)
+                    style_plotly_fig(fig_pie)
+                    fig_pie.update_layout(margin=dict(l=10, r=10, t=25, b=10))
+                    st.plotly_chart(fig_pie, use_container_width=True)
+                with viz_col4:
+                    st.markdown("#### Details")
+                    intent_pct = intent_df['Intent'].value_counts(normalize=True).reset_index()
+                    intent_pct.columns = ['Search Intent', 'Percentage']
+                    intent_pct['Percentage'] = intent_pct['Percentage'] * 100
+                    intent_summary = pd.merge(intent_counts, intent_pct, on='Search Intent')
+                    col_intent = 'Search Intent' if lang == 'EN' else 'Suchintent'
+                    col_count = 'Keywords (Count)' if lang == 'EN' else 'Keywords (Anzahl)'
+                    col_share = 'Share (%)' if lang == 'EN' else 'Anteil (%)'
+                    intent_summary.columns = [col_intent, col_count, col_share]
+                    formatted_intent_summary = intent_summary.copy()
+                    formatted_intent_summary[col_count] = formatted_intent_summary[col_count].apply(lambda x: format_num(x))
+                    formatted_intent_summary[col_share] = formatted_intent_summary[col_share].apply(lambda x: f"{format_num(x, 1)}{pct_sign}")
+                    st.write("")
+                    st.dataframe(formatted_intent_summary, use_container_width=True, hide_index=True)
+
 
         with tab_d:
             st.subheader(t["dir_sub"])
@@ -1509,6 +1586,14 @@ Comparing <strong>{date_range_str_old}</strong> to <strong>{date_range_str_new}<
                                  color='Metric_Loss', color_continuous_scale=[[0.0, '#dfdfdf'], [1.0, '#d28063']])
                 style_plotly_fig(fig_dir)
                 st.plotly_chart(fig_dir, use_container_width=True)
+                
+                # Treemap Chart
+                fig_tree = px.treemap(dir_vol, path=['Directory'], values='Metric_Loss',
+                                      title=t["dir_chart_title_tree"],
+                                      labels={'Directory': t["dir_chart_label_d"], 'Metric_Loss': t["dir_chart_label_t_sv"]},
+                                      color='Metric_Loss', color_continuous_scale=[[0.0, '#dfdfdf'], [1.0, '#d28063']])
+                style_plotly_fig(fig_tree)
+                st.plotly_chart(fig_tree, use_container_width=True)
             else:
                 st.info(t["dir_empty"])
 
@@ -1580,7 +1665,47 @@ Comparing <strong>{date_range_str_old}</strong> to <strong>{date_range_str_new}<
             st.subheader(t["lhf_sub"], anchor="low-hanging-fruits")
             st.markdown(t["lhf_desc_sistrix"])
             if not low_hanging.empty:
-                display_styled_dataframe(low_hanging[['Keyword', 'Position Change', 'Position#1', 'Position#2', 'Search Volume', 'Traffic Loss', 'Lost Value €', 'Directory']], sort_col='Search Volume', ascending=False)
+                lhf_df = low_hanging.copy()
+                lhf_df[['Potential Score', 'Difficulty']] = lhf_df.apply(calculate_lhf_sistrix, axis=1)
+                cols_to_show = ['Keyword', 'Difficulty', 'Potential Score', 'Position Change', 'Position#1', 'Position#2', 'Search Volume', 'Traffic Loss', 'Lost Value €', 'Directory']
+                styler = lhf_df[cols_to_show].sort_values('Search Volume', ascending=False).style
+                format_dict = {}
+                format_dict['Potential Score'] = lambda x: f"{x:.1f}"
+                for c in ['Search Volume']:
+                    format_dict[c] = lambda x: format_num(x) if pd.notnull(x) else ""
+                for c in ['Position#1', 'Position#2']:
+                    format_dict[c] = lambda x: "-" if pd.notnull(x) and x == 101 else (format_num(x, 2) if pd.notnull(x) else "")
+                loss_cols = [c for c in ['Traffic Loss', 'Lost Value €'] if c in lhf_df.columns]
+                if loss_cols:
+                    styler = styler.map(lambda x: 'color: #d28063; font-weight: bold;' if pd.notnull(x) and x > 0 else '', subset=loss_cols)
+                    for c in loss_cols:
+                        if c == 'Lost Value €':
+                            if lang == "EN":
+                                format_dict[c] = lambda x: f"▼ -€{format_num(x, 2)}" if pd.notnull(x) and x > 0 else ("€0.00" if pd.notnull(x) else "")
+                            else:
+                                format_dict[c] = lambda x: f"▼ -{format_num(x, 2)} €" if pd.notnull(x) and x > 0 else ("0,00 €" if pd.notnull(x) else "")
+                        else:
+                            format_dict[c] = lambda x: f"▼ -{format_num(x)}" if pd.notnull(x) and x > 0 else ("0" if pd.notnull(x) else "")
+                styler = styler.map(lambda x: 'color: #90c274; font-weight: bold;' if pd.notnull(x) and x > 0 else ('color: #d28063; font-weight: bold;' if pd.notnull(x) and x < 0 else ''), subset=['Position Change'])
+                format_dict['Position Change'] = lambda x: f"▲ +{format_num(abs(x), 2)}" if pd.notnull(x) and x > 0 else (f"▼ -{format_num(abs(x), 2)}" if pd.notnull(x) and x < 0 else format_num(0.0, 2))
+                styler = styler.format(format_dict)
+                st.dataframe(
+                    styler,
+                    column_config={
+                        "Potential Score": st.column_config.ProgressColumn(
+                            "Potential Score",
+                            help=t.get("lhf_pot_help", "Calculated potential (0-10)"),
+                            format="%.1f",
+                            min_value=0.0,
+                            max_value=10.0,
+                        ),
+                        "Difficulty": st.column_config.TextColumn(
+                            t.get("lhf_diff_label", "Difficulty"),
+                            help=t.get("lhf_diff_help", "Estimated difficulty")
+                        )
+                    },
+                    use_container_width=True
+                )
             else:
                 st.info(t["lhf_empty"])
 
