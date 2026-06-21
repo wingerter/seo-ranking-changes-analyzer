@@ -1,0 +1,6 @@
+[theme]
+primaryColor = "#993333"            # Weinrot for interactive elements
+backgroundColor = "#eaeaea"         # Seiten-Grau
+secondaryBackgroundColor = "#ffffff" # Reinweiß for cards & sidebar
+textColor = "#232323"               # Schwarz
+font = "sans serif"
