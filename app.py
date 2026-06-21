@@ -1,4 +1,4 @@
-﻿import streamlit as st
+import streamlit as st
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
@@ -1580,12 +1580,6 @@ if uploaded_file is not None and st.session_state['analyzed']:
                     Value_Loss=('Lost Value €', 'sum')
                 ).reset_index()
                 dir_vol = dir_vol[dir_vol['Metric_Loss'] > 0].sort_values('Metric_Loss', ascending=False).head(15)
-                fig_dir = px.bar(dir_vol, x='Directory', y='Metric_Loss',
-                                 title=t["dir_chart_title_sv"],
-                                 labels={'Directory': t["dir_chart_label_d"], 'Metric_Loss': t["dir_chart_label_t_sv"]},
-                                 color='Metric_Loss', color_continuous_scale=[[0.0, '#dfdfdf'], [1.0, '#d28063']])
-                style_plotly_fig(fig_dir)
-                st.plotly_chart(fig_dir, use_container_width=True)
                 
                 # Treemap Chart
                 fig_tree = px.treemap(dir_vol, path=['Directory'], values='Metric_Loss',
@@ -1594,6 +1588,13 @@ if uploaded_file is not None and st.session_state['analyzed']:
                                       color='Metric_Loss', color_continuous_scale=[[0.0, '#dfdfdf'], [1.0, '#d28063']])
                 style_plotly_fig(fig_tree)
                 st.plotly_chart(fig_tree, use_container_width=True)
+
+                fig_dir = px.bar(dir_vol, x='Directory', y='Metric_Loss',
+                                 title=t["dir_chart_title_sv"],
+                                 labels={'Directory': t["dir_chart_label_d"], 'Metric_Loss': t["dir_chart_label_t_sv"]},
+                                 color='Metric_Loss', color_continuous_scale=[[0.0, '#dfdfdf'], [1.0, '#d28063']])
+                style_plotly_fig(fig_dir)
+                st.plotly_chart(fig_dir, use_container_width=True)
             else:
                 st.info(t["dir_empty"])
 
