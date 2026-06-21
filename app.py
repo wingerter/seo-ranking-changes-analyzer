@@ -777,6 +777,7 @@ if uploaded_file is not None and st.session_state['analyzed']:
                 font-family: inherit;
                 font-size: 0.95rem;
                 overflow: hidden;
+                max-height: 150px;
                 animation: fadeOutAlert 0.5s ease-out 3s forwards;
             }}
             .success-icon {{
@@ -786,7 +787,7 @@ if uploaded_file is not None and st.session_state['analyzed']:
             @keyframes fadeOutAlert {{
                 0% {{
                     opacity: 1;
-                    max-height: 100px;
+                    max-height: 150px;
                     padding: 1rem;
                     margin-bottom: 1.5rem;
                     border-width: 1px;
