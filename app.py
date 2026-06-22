@@ -1180,7 +1180,7 @@ if uploaded_file is not None and st.session_state['analyzed']:
                         st.metric(t["kpi_worst_cluster"], worst_cluster['Cluster'], worst_delta)
                     top_bottom = pd.concat([cluster_net.nlargest(3, 'Clicks Change'), cluster_net.nsmallest(3, 'Clicks Change')]).drop_duplicates().sort_values('Clicks Change')
                     fig_net = px.bar(top_bottom, x='Clicks Change', y='Cluster', orientation='h',
-                                     color='Clicks Change', color_continuous_scale=[[0.0, '#d28063'], [0.5, '#ffed00'], [1.0, '#90c274']], height=200)
+                                     color='Clicks Change', color_continuous_scale=[[0.0, '#d28063'], [0.5, '#dfdfdf'], [1.0, '#90c274']], height=200)
                     style_plotly_fig(fig_net)
                     fig_net.update_layout(margin=dict(l=10, r=10, t=25, b=10))
                     st.plotly_chart(fig_net, use_container_width=True)
@@ -1204,8 +1204,8 @@ if uploaded_file is not None and st.session_state['analyzed']:
                     intent_df = df.assign(Intent=df['Search Intent'].str.split(', ')).explode('Intent')
                     intent_counts = intent_df['Intent'].value_counts().reset_index()
                     intent_counts.columns = ['Search Intent', 'Count']
-                    color_map = {"DO (Transactional)": "#90c274", "KNOW": "#2ea3f2",
-                                 "regional:CITY": "#ffed00", "regional:COUNTRY": "#f29e2e", "undefined": "#dfdfdf"}
+                    color_map = {"DO (Transactional)": "#1f86cf", "KNOW": "#2ea3f2",
+                                 "regional:CITY": "#0f5a90", "regional:COUNTRY": "#535353", "undefined": "#dfdfdf"}
                     fig_pie = px.pie(intent_counts, values='Count', names='Search Intent',
                                      color='Search Intent', color_discrete_map=color_map, hole=0.4, height=280)
                     style_plotly_fig(fig_pie)
@@ -1612,7 +1612,7 @@ if uploaded_file is not None and st.session_state['analyzed']:
                         st.metric(t["kpi_worst_cluster"], worst_cluster['Cluster'], delta=worst_delta)
                     top_bottom = pd.concat([cluster_net.nlargest(3, 'Metric Change'), cluster_net.nsmallest(3, 'Metric Change')]).drop_duplicates().sort_values('Metric Change')
                     fig_net = px.bar(top_bottom, x='Metric Change', y='Cluster', orientation='h',
-                                     color='Metric Change', color_continuous_scale=[[0.0, '#d28063'], [0.5, '#ffed00'], [1.0, '#90c274']], height=200)
+                                     color='Metric Change', color_continuous_scale=[[0.0, '#d28063'], [0.5, '#dfdfdf'], [1.0, '#90c274']], height=200)
                     style_plotly_fig(fig_net)
                     fig_net.update_layout(margin=dict(l=10, r=10, t=25, b=10))
                     st.plotly_chart(fig_net, use_container_width=True)
@@ -1639,8 +1639,8 @@ if uploaded_file is not None and st.session_state['analyzed']:
                     intent_df = df.assign(Intent=df['Search Intent'].str.split(', ')).explode('Intent')
                     intent_counts = intent_df['Intent'].value_counts().reset_index()
                     intent_counts.columns = ['Search Intent', 'Count']
-                    color_map = {"DO (Transactional)": "#90c274", "KNOW": "#2ea3f2",
-                                 "regional:CITY": "#ffed00", "regional:COUNTRY": "#f29e2e", "undefined": "#dfdfdf"}
+                    color_map = {"DO (Transactional)": "#1f86cf", "KNOW": "#2ea3f2",
+                                 "regional:CITY": "#0f5a90", "regional:COUNTRY": "#535353", "undefined": "#dfdfdf"}
                     fig_pie = px.pie(intent_counts, values='Count', names='Search Intent',
                                      color='Search Intent', color_discrete_map=color_map, hole=0.4, height=280)
                     style_plotly_fig(fig_pie)
@@ -1832,7 +1832,7 @@ if uploaded_file is not None and st.session_state['analyzed']:
                                      size="Search Volume", color="Directory",
                                      hover_name="Keyword", title=t["win_chart_title"],
                                      labels={'Position#2': t["win_chart_label_pos"]},
-                                     color_discrete_sequence=['#2ea3f2', '#90c274', '#e2a312', '#993333', '#797979'])
+                                     color_discrete_sequence=['#2ea3f2', '#1f86cf', '#0f5a90', '#8c96c6', '#535353', '#797979'])
                 fig_win.update_yaxes(autorange="reversed")
                 style_plotly_fig(fig_win)
                 st.plotly_chart(fig_win, use_container_width=True)
