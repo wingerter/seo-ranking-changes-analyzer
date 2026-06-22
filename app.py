@@ -195,6 +195,10 @@ translations = {
         "rd_sum_vol": "Affected Search Volume:",
         "rd_sum_traf": "(Estimated Traffic Loss:",
         "rd_sum_clicks": "Total lost clicks:",
+        "rd_t3_desc_gsc": "These are your most critical keyword losses. Positions 1-3 generate the majority of click-through rates and organic traffic. Losing these rankings results in an immediate and noticeable traffic drop. Affected: **{count}** keywords, representing a loss of **{clicks}** clicks and **{impressions}** impressions.",
+        "rd_t10_desc_gsc": "Keywords that lost visibility on the first search engine results page (positions 4-10). While still on Page 1, any drop here significantly reduces click share. Affected: **{count}** keywords, representing a loss of **{clicks}** clicks and **{impressions}** impressions.",
+        "rd_p2_desc_gsc": "Keywords that were ranking on Page 2 (positions 11-20) and lost ground. These keywords were close to entering the high-traffic Page 1 threshold, but have now drifted further away. Affected: **{count}** keywords, representing a loss of **{clicks}** clicks and **{impressions}** impressions.",
+        "rd_100_desc_gsc": "Keywords that fell out of the Top 100 rankings entirely, meaning a complete loss of organic search visibility for these terms. Affected: **{count}** keywords, representing a loss of **{clicks}** clicks and **{impressions}** impressions.",
         # Click Losses tab (GSC only)
         "cd_sub": "Biggest absolute click losses (All)",
         # LHF tab
@@ -361,6 +365,10 @@ You have the right to access, rectify, erase, or restrict the processing of your
         "rd_sum_vol": "Angezeigtes Suchvolumen:",
         "rd_sum_traf": "(Geschätzter Traffic-Verlust:",
         "rd_sum_clicks": "Verlorene Klicks gesamt:",
+        "rd_t3_desc_gsc": "Dies sind Ihre kritischsten Keyword-Verluste. Die Positionen 1–3 generieren den Großteil der Klicks und des organischen Traffics. Ein Verlust hier führt zu einem spürbaren Einbruch. Betroffen: **{count}** Keywords mit einem Verlust von **{clicks}** Klicks und **{impressions}** Impressionen.",
+        "rd_t10_desc_gsc": "Keywords, die Sichtbarkeit auf der ersten Suchergebnisseite (Positionen 4–10) verloren haben. Obwohl sie noch sichtbar sind, sinkt die Klickrate mit jeder tieferen Position drastisch. Betroffen: **{count}** Keywords mit einem Verlust von **{clicks}** Klicks und **{impressions}** Impressionen.",
+        "rd_p2_desc_gsc": "Keywords, die auf Seite 2 (Positionen 11–20) gerankt haben und an Boden verloren haben. Diese Keywords waren kurz vor der einkommensstarken ersten Seite, sind nun aber weiter nach hinten gerutscht. Betroffen: **{count}** Keywords mit einem Verlust von **{clicks}** Klicks und **{impressions}** Impressionen.",
+        "rd_100_desc_gsc": "Keywords, die vollständig aus den Top 100 Rankings herausgefallen sind, was einen kompletten Verlust der organischen Sichtbarkeit für diese Begriffe bedeutet. Betroffen: **{count}** Keywords mit einem Verlust von **{clicks}** Klicks und **{impressions}** Impressionen.",
         # Click Losses tab (GSC only)
         "cd_sub": "Größte absolute Klick-Verluste (Alle)",
         # LHF tab
@@ -1021,9 +1029,9 @@ if uploaded_file is not None and st.session_state['analyzed']:
             st.session_state["main_tabs"] = t["tab_drops"]
 
     if mode_key == "gsc":
-        tab_sum, tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
-            t["tab_summary"], t["tab_cluster"], t["tab_drops"], t["tab_losses"],
-            t["tab_lhf"], t["tab_winners"], t["tab_all"]
+        tab_sum, tab2, tab5, tab4, tab3, tab1, tab6 = st.tabs([
+            t["tab_summary"], t["tab_drops"], t["tab_winners"], t["tab_lhf"],
+            t["tab_losses"], t["tab_cluster"], t["tab_all"]
         ], key="main_tabs", on_change=on_tab_change)
 
         with tab_sum:
@@ -1258,6 +1266,11 @@ if uploaded_file is not None and st.session_state['analyzed']:
             st.markdown("<div id='top3-drops'></div>", unsafe_allow_html=True)
             st.markdown(t["rd_t3_title"])
             if not f_top3.empty:
+                t_clicks = format_num(int(f_top3['Clicks Loss'].sum()))
+                t_impressions = format_num(int(f_top3['Impressions Loss'].sum()))
+                t_count = format_num(len(f_top3))
+                desc_text = t["rd_t3_desc_gsc"].format(count=t_count, clicks=t_clicks, impressions=t_impressions)
+                st.markdown(desc_text)
                 st.write(f"{t['rd_sum_clicks']} **{format_num(int(f_top3['Clicks Loss'].sum()))}**")
                 display_styled_dataframe(f_top3[['Keyword', 'Position Change', 'Position_Old', 'Position_New', 'Clicks Loss', 'Clicks_Old', 'Clicks_New']], sort_col='Clicks Loss')
             else:
@@ -1266,6 +1279,11 @@ if uploaded_file is not None and st.session_state['analyzed']:
             st.markdown("<div id='top10-drops'></div>", unsafe_allow_html=True)
             st.markdown(t["rd_t10_title"])
             if not f_top10.empty:
+                t_clicks = format_num(int(f_top10['Clicks Loss'].sum()))
+                t_impressions = format_num(int(f_top10['Impressions Loss'].sum()))
+                t_count = format_num(len(f_top10))
+                desc_text = t["rd_t10_desc_gsc"].format(count=t_count, clicks=t_clicks, impressions=t_impressions)
+                st.markdown(desc_text)
                 st.write(f"{t['rd_sum_clicks']} **{format_num(int(f_top10['Clicks Loss'].sum()))}**")
                 display_styled_dataframe(f_top10[['Keyword', 'Position Change', 'Position_Old', 'Position_New', 'Clicks Loss', 'Clicks_Old', 'Clicks_New']], sort_col='Clicks Loss')
             else:
@@ -1273,6 +1291,11 @@ if uploaded_file is not None and st.session_state['analyzed']:
 
             st.markdown(t["rd_p2_title"])
             if not f_page2.empty:
+                t_clicks = format_num(int(f_page2['Clicks Loss'].sum()))
+                t_impressions = format_num(int(f_page2['Impressions Loss'].sum()))
+                t_count = format_num(len(f_page2))
+                desc_text = t["rd_p2_desc_gsc"].format(count=t_count, clicks=t_clicks, impressions=t_impressions)
+                st.markdown(desc_text)
                 st.write(f"{t['rd_sum_clicks']} **{format_num(int(f_page2['Clicks Loss'].sum()))}**")
                 display_styled_dataframe(f_page2[['Keyword', 'Position Change', 'Position_Old', 'Position_New', 'Clicks Loss', 'Clicks_Old', 'Clicks_New']], sort_col='Clicks Loss')
             else:
@@ -1280,6 +1303,11 @@ if uploaded_file is not None and st.session_state['analyzed']:
 
             st.markdown(t["rd_100_title"])
             if not f_total.empty:
+                t_clicks = format_num(int(f_total['Clicks Loss'].sum()))
+                t_impressions = format_num(int(f_total['Impressions Loss'].sum()))
+                t_count = format_num(len(f_total))
+                desc_text = t["rd_100_desc_gsc"].format(count=t_count, clicks=t_clicks, impressions=t_impressions)
+                st.markdown(desc_text)
                 st.write(f"{t['rd_sum_clicks']} **{format_num(int(f_total['Clicks Loss'].sum()))}**")
                 display_styled_dataframe(f_total[['Keyword', 'Position Change', 'Position_Old', 'Position_New', 'Clicks Loss', 'Clicks_Old', 'Clicks_New']], sort_col='Clicks Loss')
             else:
@@ -1331,7 +1359,6 @@ if uploaded_file is not None and st.session_state['analyzed']:
             if not winners.empty:
                 display_winners = winners[(winners['Position Change'] > 0) & (~((winners['Position_New'] > 11) & (winners['Position Change'] < 9)))]
                 if not display_winners.empty:
-                    display_styled_dataframe(display_winners[['Keyword', 'Position Change', 'Position_Old', 'Position_New', 'Clicks Gain', 'Clicks_Old', 'Clicks_New']], sort_col='Clicks Gain')
                     fig_win = px.scatter(display_winners, x="Clicks Gain", y="Position_New",
                                          size="Clicks_New", color="Position Change",
                                          hover_name="Keyword", title=t["win_chart_title"],
@@ -1340,6 +1367,7 @@ if uploaded_file is not None and st.session_state['analyzed']:
                     fig_win.update_yaxes(autorange="reversed")
                     style_plotly_fig(fig_win)
                     st.plotly_chart(fig_win, use_container_width=True)
+                    display_styled_dataframe(display_winners[['Keyword', 'Position Change', 'Position_Old', 'Position_New', 'Clicks Gain', 'Clicks_Old', 'Clicks_New']], sort_col='Clicks Gain')
                 else:
                     st.info(t["win_empty"])
             else:
