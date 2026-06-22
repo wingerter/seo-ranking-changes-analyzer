@@ -560,7 +560,7 @@ def display_styled_dataframe(df_to_show, sort_col, ascending=False):
     format_dict = {}
 
     if loss_cols:
-        styler = styler.map(lambda x: 'color: #993333; font-weight: bold;' if pd.notnull(x) and x > 0 else '', subset=loss_cols)
+        styler = styler.map(lambda x: 'color: #d28063; font-weight: bold;' if pd.notnull(x) and x > 0 else '', subset=loss_cols)
         for c in loss_cols:
             if c == 'Lost Value €':
                 if lang == "EN":
@@ -588,12 +588,12 @@ def display_styled_dataframe(df_to_show, sort_col, ascending=False):
             format_dict[c] = lambda x: "-" if pd.notnull(x) and x == 101 else (format_num(x, 2) if pd.notnull(x) else "")
 
     if 'Position Change' in df_to_show.columns:
-        styler = styler.map(lambda x: 'color: #90c274; font-weight: bold;' if pd.notnull(x) and x > 0 else ('color: #993333; font-weight: bold;' if pd.notnull(x) and x < 0 else ''), subset=['Position Change'])
+        styler = styler.map(lambda x: 'color: #90c274; font-weight: bold;' if pd.notnull(x) and x > 0 else ('color: #d28063; font-weight: bold;' if pd.notnull(x) and x < 0 else ''), subset=['Position Change'])
         format_dict['Position Change'] = lambda x: f"▲ +{format_num(abs(x), 2)}" if pd.notnull(x) and x > 0 else (f"▼ -{format_num(abs(x), 2)}" if pd.notnull(x) and x < 0 else format_num(0.0, 2))
 
     for c in ['Traffic Change', 'Clicks Change']:
         if c in df_to_show.columns:
-            styler = styler.map(lambda x: 'color: #90c274; font-weight: bold;' if pd.notnull(x) and x > 0 else ('color: #993333; font-weight: bold;' if pd.notnull(x) and x < 0 else ''), subset=[c])
+            styler = styler.map(lambda x: 'color: #90c274; font-weight: bold;' if pd.notnull(x) and x > 0 else ('color: #d28063; font-weight: bold;' if pd.notnull(x) and x < 0 else ''), subset=[c])
             format_dict[c] = lambda x: f"▲ +{format_num(x)}" if pd.notnull(x) and x > 0 else (f"▼ -{format_num(abs(x))}" if pd.notnull(x) and x < 0 else "0")
 
     styler = styler.format(format_dict)
@@ -1086,14 +1086,14 @@ if uploaded_file is not None and st.session_state['analyzed']:
             if lang == "DE":
                 story_text = f"""<p style='font-family: "Open Sans", sans-serif; color: #444444; line-height: 1.6; font-size: 0.95rem; margin-bottom: 1rem;'>
     Im analysierten Zeitraum verzeichnete die Website eine
-    <strong style='color: #232323;'>Netto-Klick-Veränderung von <span style='color: {"#90c274" if net_clicks > 0 else "#993333"}; font-weight: bold;'>{net_val_str}</span> ({pct_val_str})</strong>.
+    <strong style='color: #232323;'>Netto-Klick-Veränderung von <span style='color: {"#90c274" if net_clicks > 0 else "#d28063"}; font-weight: bold;'>{net_val_str}</span> ({pct_val_str})</strong>.
     Dieser Wert setzt sich aus einem <strong>Gewinn von <span style='color: #90c274; font-weight: bold;'>{gain_val_str}</span> Klicks</strong>
-    und einem <strong>Verlust von <span style='color: #993333; font-weight: bold;'>{loss_val_str}</span> Klicks</strong> zusammen.
+    und einem <strong>Verlust von <span style='color: #d28063; font-weight: bold;'>{loss_val_str}</span> Klicks</strong> zusammen.
     </p>
     <h4 style='font-family: "Raleway", sans-serif; font-weight: 700; color: #232323; margin-top: 1rem; margin-bottom: 0.5rem;'>Haupttreiber des Klick-Verlusts:</h4>
     <ul style='font-family: "Open Sans", sans-serif; color: #444444; line-height: 1.5; font-size: 0.95rem; padding-left: 1.2rem; margin-top: 0;'>
-    <li style='margin-bottom: 0.5rem;'><strong>Abstürze aus den Top 3:</strong> <span style='font-weight: bold;'>{format_num(top3_count)} Keywords</span> sind aus den Top-Positionen (1-3) herausgerutscht. Verlust: <span style='color: #993333; font-weight: bold;'>{top3_loss} Klicks</span>.</li>
-    <li style='margin-bottom: 0.5rem;'><strong>Abstürze aus den Top 10:</strong> <span style='font-weight: bold;'>{format_num(top10_count)} Keywords</span> haben die erste Suchergebnisseite verlassen. Verlust: <span style='color: #993333; font-weight: bold;'>{top10_loss} Klicks</span>.</li>
+    <li style='margin-bottom: 0.5rem;'><strong>Abstürze aus den Top 3:</strong> <span style='font-weight: bold;'>{format_num(top3_count)} Keywords</span> sind aus den Top-Positionen (1-3) herausgerutscht. Verlust: <span style='color: #d28063; font-weight: bold;'>{top3_loss} Klicks</span>.</li>
+    <li style='margin-bottom: 0.5rem;'><strong>Abstürze aus den Top 10:</strong> <span style='font-weight: bold;'>{format_num(top10_count)} Keywords</span> haben die erste Suchergebnisseite verlassen. Verlust: <span style='color: #d28063; font-weight: bold;'>{top10_loss} Klicks</span>.</li>
     </ul>
     <h4 style='font-family: "Raleway", sans-serif; font-weight: 700; color: #232323; margin-top: 1rem; margin-bottom: 0.5rem;'>Quick-Wins / Handlungsempfehlungen:</h4>
     <ul style='font-family: "Open Sans", sans-serif; color: #444444; line-height: 1.5; font-size: 0.95rem; padding-left: 1.2rem; margin-top: 0;'>
@@ -1103,14 +1103,14 @@ if uploaded_file is not None and st.session_state['analyzed']:
             else:
                 story_text = f"""<p style='font-family: "Open Sans", sans-serif; color: #444444; line-height: 1.6; font-size: 0.95rem; margin-bottom: 1rem;'>
     During the analyzed timeframe, the website recorded a
-    <strong style='color: #232323;'>Net Click Change of <span style='color: {"#90c274" if net_clicks > 0 else "#993333"}; font-weight: bold;'>{net_val_str}</span> ({pct_val_str})</strong>.
+    <strong style='color: #232323;'>Net Click Change of <span style='color: {"#90c274" if net_clicks > 0 else "#d28063"}; font-weight: bold;'>{net_val_str}</span> ({pct_val_str})</strong>.
     This value is composed of a <strong>gain of <span style='color: #90c274; font-weight: bold;'>{gain_val_str}</span> clicks</strong>
-    and a <strong>loss of <span style='color: #993333; font-weight: bold;'>{loss_val_str}</span> clicks</strong>.
+    and a <strong>loss of <span style='color: #d28063; font-weight: bold;'>{loss_val_str}</span> clicks</strong>.
     </p>
     <h4 style='font-family: "Raleway", sans-serif; font-weight: 700; color: #232323; margin-top: 1rem; margin-bottom: 0.5rem;'>Main Drivers of Click Loss:</h4>
     <ul style='font-family: "Open Sans", sans-serif; color: #444444; line-height: 1.5; font-size: 0.95rem; padding-left: 1.2rem; margin-top: 0;'>
-    <li style='margin-bottom: 0.5rem;'><strong>Drops from Top 3:</strong> <span style='font-weight: bold;'>{format_num(top3_count)} keywords</span> slipped out of the top positions (1-3). This caused a loss of <span style='color: #993333; font-weight: bold;'>{top3_loss} clicks</span>.</li>
-    <li style='margin-bottom: 0.5rem;'><strong>Drops from Top 10:</strong> <span style='font-weight: bold;'>{format_num(top10_count)} keywords</span> fell off page 1, resulting in a loss of <span style='color: #993333; font-weight: bold;'>{top10_loss} clicks</span>.</li>
+    <li style='margin-bottom: 0.5rem;'><strong>Drops from Top 3:</strong> <span style='font-weight: bold;'>{format_num(top3_count)} keywords</span> slipped out of the top positions (1-3). This caused a loss of <span style='color: #d28063; font-weight: bold;'>{top3_loss} clicks</span>.</li>
+    <li style='margin-bottom: 0.5rem;'><strong>Drops from Top 10:</strong> <span style='font-weight: bold;'>{format_num(top10_count)} keywords</span> fell off page 1, resulting in a loss of <span style='color: #d28063; font-weight: bold;'>{top10_loss} clicks</span>.</li>
     </ul>
     <h4 style='font-family: "Raleway", sans-serif; font-weight: 700; color: #232323; margin-top: 1rem; margin-bottom: 0.5rem;'>Quick-Wins / Actionable Recommendations:</h4>
     <ul style='font-family: "Open Sans", sans-serif; color: #444444; line-height: 1.5; font-size: 0.95rem; padding-left: 1.2rem; margin-top: 0;'>
@@ -1180,7 +1180,7 @@ if uploaded_file is not None and st.session_state['analyzed']:
                         st.metric(t["kpi_worst_cluster"], worst_cluster['Cluster'], worst_delta)
                     top_bottom = pd.concat([cluster_net.nlargest(3, 'Clicks Change'), cluster_net.nsmallest(3, 'Clicks Change')]).drop_duplicates().sort_values('Clicks Change')
                     fig_net = px.bar(top_bottom, x='Clicks Change', y='Cluster', orientation='h',
-                                     color='Clicks Change', color_continuous_scale=[[0.0, '#993333'], [0.5, '#dfdfdf'], [1.0, '#90c274']], height=200)
+                                     color='Clicks Change', color_continuous_scale=[[0.0, '#d28063'], [0.5, '#dfdfdf'], [1.0, '#90c274']], height=200)
                     style_plotly_fig(fig_net)
                     fig_net.update_layout(margin=dict(l=10, r=10, t=25, b=10))
                     st.plotly_chart(fig_net, use_container_width=True)
@@ -1331,7 +1331,7 @@ if uploaded_file is not None and st.session_state['analyzed']:
                     format_dict[c] = lambda x: format_num(x) if pd.notnull(x) else ""
                 for c in ['Position_Old', 'Position_New']:
                     format_dict[c] = lambda x: "-" if pd.notnull(x) and x == 101 else (format_num(x, 2) if pd.notnull(x) else "")
-                styler = styler.map(lambda x: 'color: #90c274; font-weight: bold;' if pd.notnull(x) and x > 0 else ('color: #993333; font-weight: bold;' if pd.notnull(x) and x < 0 else ''), subset=['Position Change'])
+                styler = styler.map(lambda x: 'color: #90c274; font-weight: bold;' if pd.notnull(x) and x > 0 else ('color: #d28063; font-weight: bold;' if pd.notnull(x) and x < 0 else ''), subset=['Position Change'])
                 format_dict['Position Change'] = lambda x: f"▲ +{format_num(abs(x), 2)}" if pd.notnull(x) and x > 0 else (f"▼ -{format_num(abs(x), 2)}" if pd.notnull(x) and x < 0 else format_num(0.0, 2))
                 styler = styler.format(format_dict)
                 st.dataframe(
@@ -1495,14 +1495,14 @@ if uploaded_file is not None and st.session_state['analyzed']:
     <h4 style='font-family: "Raleway", sans-serif; font-weight: 700; color: #232323; margin-top: 1rem; margin-bottom: 0.5rem;'>Ranking-Veränderungen (Positions-Daten):</h4>
     <ul style='font-family: "Open Sans", sans-serif; color: #444444; line-height: 1.5; font-size: 0.95rem; padding-left: 1.2rem; margin-top: 0;'>
     <li style='margin-bottom: 0.5rem;'><strong>Positions-Gewinne:</strong> <span style='font-weight: bold;'>{format_num(gained_keywords_count)} Keywords</span> verbessert (Ø <span style='color: #90c274; font-weight: bold;'>+{format_num(avg_gain_pos, 1)} Positionen</span>, Gesamt-SV: <span style='font-weight: bold;'>{format_num(gained_keywords_sv)} SV</span>).</li>
-    <li style='margin-bottom: 0.5rem;'><strong>Positions-Verluste:</strong> <span style='font-weight: bold;'>{format_num(lost_keywords_count)} Keywords</span> verschlechtert (Ø <span style='color: #993333; font-weight: bold;'>-{format_num(avg_loss_pos, 1)} Positionen</span>, Gesamt-SV: <span style='font-weight: bold;'>{format_num(lost_keywords_sv)} SV</span>).</li>
-    <li style='margin-bottom: 0.5rem;'><strong>Gesamt-Tendenz:</strong> Ø Positions-Veränderung: <span style='font-weight: bold; color: {"#90c274" if avg_pos_change > 0 else "#993333"};'>{avg_pos_change_sign}{format_num(avg_pos_change, 2)} Positionen</span> (Gesamt-SV: <span style='font-weight: bold;'>{format_num(total_sv)} SV</span>).</li>
+    <li style='margin-bottom: 0.5rem;'><strong>Positions-Verluste:</strong> <span style='font-weight: bold;'>{format_num(lost_keywords_count)} Keywords</span> verschlechtert (Ø <span style='color: #d28063; font-weight: bold;'>-{format_num(avg_loss_pos, 1)} Positionen</span>, Gesamt-SV: <span style='font-weight: bold;'>{format_num(lost_keywords_sv)} SV</span>).</li>
+    <li style='margin-bottom: 0.5rem;'><strong>Gesamt-Tendenz:</strong> Ø Positions-Veränderung: <span style='font-weight: bold; color: {"#90c274" if avg_pos_change > 0 else "#d28063"};'>{avg_pos_change_sign}{format_num(avg_pos_change, 2)} Positionen</span> (Gesamt-SV: <span style='font-weight: bold;'>{format_num(total_sv)} SV</span>).</li>
     </ul>
     <h4 style='font-family: "Raleway", sans-serif; font-weight: 700; color: #232323; margin-top: 1rem; margin-bottom: 0.5rem;'>Haupttreiber der Ranking-Abstürze:</h4>
     <ul style='font-family: "Open Sans", sans-serif; color: #444444; line-height: 1.5; font-size: 0.95rem; padding-left: 1.2rem; margin-top: 0;'>
-    <li style='margin-bottom: 0.5rem;'><strong>Abstürze aus den Top 3:</strong> <span style='font-weight: bold;'>{format_num(top3_count)} Keywords</span> verloren Top-Positionen (Verlust: <span style='color: #993333; font-weight: bold;'>{top3_loss_only}</span>).</li>
-    <li style='margin-bottom: 0.5rem;'><strong>Abstürze aus den Top 10:</strong> Weitere <span style='font-weight: bold;'>{format_num(top10_count)} Keywords</span> fielen von Seite 1 (Verlust: <span style='color: #993333; font-weight: bold;'>{top10_loss_only}</span>).</li>
-    <li style='margin-bottom: 0.5rem;'><strong>Vollständige Ranking-Verluste:</strong> <span style='font-weight: bold;'>{format_num(total_loss_count)} Keywords</span> komplett aus den Top 100 herausgefallen (Verlust: <span style='color: #993333; font-weight: bold;'>{total_loss_loss_only}</span>).</li>
+    <li style='margin-bottom: 0.5rem;'><strong>Abstürze aus den Top 3:</strong> <span style='font-weight: bold;'>{format_num(top3_count)} Keywords</span> verloren Top-Positionen (Verlust: <span style='color: #d28063; font-weight: bold;'>{top3_loss_only}</span>).</li>
+    <li style='margin-bottom: 0.5rem;'><strong>Abstürze aus den Top 10:</strong> Weitere <span style='font-weight: bold;'>{format_num(top10_count)} Keywords</span> fielen von Seite 1 (Verlust: <span style='color: #d28063; font-weight: bold;'>{top10_loss_only}</span>).</li>
+    <li style='margin-bottom: 0.5rem;'><strong>Vollständige Ranking-Verluste:</strong> <span style='font-weight: bold;'>{format_num(total_loss_count)} Keywords</span> komplett aus den Top 100 herausgefallen (Verlust: <span style='color: #d28063; font-weight: bold;'>{total_loss_loss_only}</span>).</li>
     </ul>"""
                 story_title = "Executive Summary & Marketing-Story"
             else:
@@ -1512,14 +1512,14 @@ if uploaded_file is not None and st.session_state['analyzed']:
     <h4 style='font-family: "Raleway", sans-serif; font-weight: 700; color: #232323; margin-top: 1rem; margin-bottom: 0.5rem;'>Ranking Changes (Position Data):</h4>
     <ul style='font-family: "Open Sans", sans-serif; color: #444444; line-height: 1.5; font-size: 0.95rem; padding-left: 1.2rem; margin-top: 0;'>
     <li style='margin-bottom: 0.5rem;'><strong>Position Gains:</strong> <span style='font-weight: bold;'>{format_num(gained_keywords_count)} keywords</span> improved (avg. <span style='color: #90c274; font-weight: bold;'>+{format_num(avg_gain_pos, 1)} positions</span>, total SV: <span style='font-weight: bold;'>{format_num(gained_keywords_sv)} SV</span>).</li>
-    <li style='margin-bottom: 0.5rem;'><strong>Position Losses:</strong> <span style='font-weight: bold;'>{format_num(lost_keywords_count)} keywords</span> deteriorated (avg. <span style='color: #993333; font-weight: bold;'>-{format_num(avg_loss_pos, 1)} positions</span>, total SV: <span style='font-weight: bold;'>{format_num(lost_keywords_sv)} SV</span>).</li>
-    <li style='margin-bottom: 0.5rem;'><strong>Overall Trend:</strong> Avg. position change: <span style='font-weight: bold; color: {"#90c274" if avg_pos_change > 0 else "#993333"};'>{avg_pos_change_sign}{format_num(avg_pos_change, 2)} positions</span> (total SV: <span style='font-weight: bold;'>{format_num(total_sv)} SV</span>).</li>
+    <li style='margin-bottom: 0.5rem;'><strong>Position Losses:</strong> <span style='font-weight: bold;'>{format_num(lost_keywords_count)} keywords</span> deteriorated (avg. <span style='color: #d28063; font-weight: bold;'>-{format_num(avg_loss_pos, 1)} positions</span>, total SV: <span style='font-weight: bold;'>{format_num(lost_keywords_sv)} SV</span>).</li>
+    <li style='margin-bottom: 0.5rem;'><strong>Overall Trend:</strong> Avg. position change: <span style='font-weight: bold; color: {"#90c274" if avg_pos_change > 0 else "#d28063"};'>{avg_pos_change_sign}{format_num(avg_pos_change, 2)} positions</span> (total SV: <span style='font-weight: bold;'>{format_num(total_sv)} SV</span>).</li>
     </ul>
     <h4 style='font-family: "Raleway", sans-serif; font-weight: 700; color: #232323; margin-top: 1rem; margin-bottom: 0.5rem;'>Main Drivers of Ranking Drops:</h4>
     <ul style='font-family: "Open Sans", sans-serif; color: #444444; line-height: 1.5; font-size: 0.95rem; padding-left: 1.2rem; margin-top: 0;'>
-    <li style='margin-bottom: 0.5rem;'><strong>Drops from Top 3:</strong> <span style='font-weight: bold;'>{format_num(top3_count)} keywords</span> lost top positions (loss of <span style='color: #993333; font-weight: bold;'>{top3_loss_only}</span>).</li>
-    <li style='margin-bottom: 0.5rem;'><strong>Drops from Top 10:</strong> <span style='font-weight: bold;'>{format_num(top10_count)} keywords</span> fell off page 1 (loss of <span style='color: #993333; font-weight: bold;'>{top10_loss_only}</span>).</li>
-    <li style='margin-bottom: 0.5rem;'><strong>Complete Losses:</strong> <span style='font-weight: bold;'>{format_num(total_loss_count)} keywords</span> dropped out of the Top 100 (loss of <span style='color: #993333; font-weight: bold;'>{total_loss_loss_only}</span>).</li>
+    <li style='margin-bottom: 0.5rem;'><strong>Drops from Top 3:</strong> <span style='font-weight: bold;'>{format_num(top3_count)} keywords</span> lost top positions (loss of <span style='color: #d28063; font-weight: bold;'>{top3_loss_only}</span>).</li>
+    <li style='margin-bottom: 0.5rem;'><strong>Drops from Top 10:</strong> <span style='font-weight: bold;'>{format_num(top10_count)} keywords</span> fell off page 1 (loss of <span style='color: #d28063; font-weight: bold;'>{top10_loss_only}</span>).</li>
+    <li style='margin-bottom: 0.5rem;'><strong>Complete Losses:</strong> <span style='font-weight: bold;'>{format_num(total_loss_count)} keywords</span> dropped out of the Top 100 (loss of <span style='color: #d28063; font-weight: bold;'>{total_loss_loss_only}</span>).</li>
     </ul>
     <h4 style='font-family: "Raleway", sans-serif; font-weight: 700; color: #232323; margin-top: 1rem; margin-bottom: 0.5rem;'>Quick-Wins / Actionable Recommendations:</h4>
     <ul style='font-family: "Open Sans", sans-serif; color: #444444; line-height: 1.5; font-size: 0.95rem; padding-left: 1.2rem; margin-top: 0;'>
@@ -1608,7 +1608,7 @@ if uploaded_file is not None and st.session_state['analyzed']:
                         st.metric(t["kpi_worst_cluster"], worst_cluster['Cluster'], delta=worst_delta)
                     top_bottom = pd.concat([cluster_net.nlargest(3, 'Metric Change'), cluster_net.nsmallest(3, 'Metric Change')]).drop_duplicates().sort_values('Metric Change')
                     fig_net = px.bar(top_bottom, x='Metric Change', y='Cluster', orientation='h',
-                                     color='Metric Change', color_continuous_scale=[[0.0, '#993333'], [0.5, '#dfdfdf'], [1.0, '#90c274']], height=200)
+                                     color='Metric Change', color_continuous_scale=[[0.0, '#d28063'], [0.5, '#dfdfdf'], [1.0, '#90c274']], height=200)
                     style_plotly_fig(fig_net)
                     fig_net.update_layout(margin=dict(l=10, r=10, t=25, b=10))
                     st.plotly_chart(fig_net, use_container_width=True)
@@ -1789,7 +1789,7 @@ if uploaded_file is not None and st.session_state['analyzed']:
                     format_dict[c] = lambda x: "-" if pd.notnull(x) and x == 101 else (format_num(x, 2) if pd.notnull(x) else "")
                 loss_cols = [c for c in ['Traffic Loss', 'Lost Value €'] if c in lhf_df.columns]
                 if loss_cols:
-                    styler = styler.map(lambda x: 'color: #993333; font-weight: bold;' if pd.notnull(x) and x > 0 else '', subset=loss_cols)
+                    styler = styler.map(lambda x: 'color: #d28063; font-weight: bold;' if pd.notnull(x) and x > 0 else '', subset=loss_cols)
                     for c in loss_cols:
                         if c == 'Lost Value €':
                             if lang == "EN":
@@ -1798,7 +1798,7 @@ if uploaded_file is not None and st.session_state['analyzed']:
                                 format_dict[c] = lambda x: f"▼ -{format_num(x, 2)} €" if pd.notnull(x) and x > 0 else ("0,00 €" if pd.notnull(x) else "")
                         else:
                             format_dict[c] = lambda x: f"▼ -{format_num(x)}" if pd.notnull(x) and x > 0 else ("0" if pd.notnull(x) else "")
-                styler = styler.map(lambda x: 'color: #90c274; font-weight: bold;' if pd.notnull(x) and x > 0 else ('color: #993333; font-weight: bold;' if pd.notnull(x) and x < 0 else ''), subset=['Position Change'])
+                styler = styler.map(lambda x: 'color: #90c274; font-weight: bold;' if pd.notnull(x) and x > 0 else ('color: #d28063; font-weight: bold;' if pd.notnull(x) and x < 0 else ''), subset=['Position Change'])
                 format_dict['Position Change'] = lambda x: f"▲ +{format_num(abs(x), 2)}" if pd.notnull(x) and x > 0 else (f"▼ -{format_num(abs(x), 2)}" if pd.notnull(x) and x < 0 else format_num(0.0, 2))
                 styler = styler.format(format_dict)
                 st.dataframe(
