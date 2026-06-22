@@ -182,12 +182,16 @@ translations = {
         "rd_filter": "Filter by keyword (optional):",
         "rd_t3_title": "#### 1. Top 3 Drops (Ranking losses starting in Top 3)",
         "rd_t3_empty": "No Top 3 Drops found.",
+        "rd_t3_desc": "These are your most critical keyword losses. Positions 1-3 generate the majority of click-through rates and organic traffic. Losing these rankings results in an immediate and noticeable traffic drop. Affected: **{count}** keywords, representing **{vol}** search volume, an estimated traffic loss of **{traffic}** clicks, and an AdWords value equivalent loss of **{val}**.",
         "rd_t10_title": "#### 2. Top 10 Drops (Ranking losses starting in Top 10)",
         "rd_t10_empty": "No Top 10 Drops found.",
+        "rd_t10_desc": "Keywords that lost visibility on the first search engine results page (positions 4-10). While still on Page 1, any drop here significantly reduces click share. Affected: **{count}** keywords, representing **{vol}** search volume, an estimated traffic loss of **{traffic}** clicks, and an AdWords value equivalent loss of **{val}**.",
         "rd_p2_title": "#### 3. Page 2 Drops (Ranking losses starting on Page 2)",
         "rd_p2_empty": "No Page 2 Drops found.",
+        "rd_p2_desc": "Keywords that were ranking on Page 2 (positions 11-20) and lost ground. These keywords were close to entering the high-traffic Page 1 threshold, but have now drifted further away. Affected: **{count}** keywords, representing **{vol}** search volume, an estimated traffic loss of **{traffic}** clicks, and an AdWords value equivalent loss of **{val}**.",
         "rd_100_title": "#### 4. Complete Losses (Fell out of Top 100)",
         "rd_100_empty": "No keywords fell out of Top 100.",
+        "rd_100_desc": "Keywords that fell out of the Top 100 rankings entirely, meaning a complete loss of organic search visibility for these terms. Affected: **{count}** keywords, representing **{vol}** search volume, an estimated traffic loss of **{traffic}** clicks, and an AdWords value equivalent loss of **{val}**.",
         "rd_sum_vol": "Affected Search Volume:",
         "rd_sum_traf": "(Estimated Traffic Loss:",
         "rd_sum_clicks": "Total lost clicks:",
@@ -344,12 +348,16 @@ You have the right to access, rectify, erase, or restrict the processing of your
         "rd_filter": "Nach Keyword filtern (optional):",
         "rd_t3_title": "#### 1. Top 3 Abstürze (Ranking-Verluste aus den Top 3)",
         "rd_t3_empty": "Keine Top 3 Drops gefunden.",
+        "rd_t3_desc": "Dies sind Ihre kritischsten Keyword-Verluste. Die Positionen 1–3 generieren den Großteil der Klicks und des organischen Traffics. Ein Verlust hier führt zu einem spürbaren Einbruch. Betroffen: **{count}** Keywords mit einem Suchvolumen von **{vol}**, einem geschätzten Traffic-Verlust von **{traffic}** Klicks und einem AdWords-Wertverlust von **{val}**.",
         "rd_t10_title": "#### 2. Top 10 Abstürze (Ranking-Verluste aus den Top 10)",
         "rd_t10_empty": "Keine Top 10 Drops gefunden.",
+        "rd_t10_desc": "Keywords, die Sichtbarkeit auf der ersten Suchergebnisseite (Positionen 4–10) verloren haben. Obwohl sie noch sichtbar sind, sinkt die Klickrate mit jeder tieferen Position drastisch. Betroffen: **{count}** Keywords mit einem Suchvolumen von **{vol}**, einem geschätzten Traffic-Verlust von **{traffic}** Klicks und einem AdWords-Wertverlust von **{val}**.",
         "rd_p2_title": "#### 3. Seite 2 Abstürze (Ranking-Verluste von Seite 2)",
         "rd_p2_empty": "Keine Seite 2 Drops gefunden.",
+        "rd_p2_desc": "Keywords, die auf Seite 2 (Positionen 11–20) gerankt haben und an Boden verloren haben. Diese Keywords waren kurz vor der einkommensstarken ersten Seite, sind nun aber weiter nach hinten gerutscht. Betroffen: **{count}** Keywords mit einem Suchvolumen von **{vol}**, einem geschätzten Traffic-Verlust von **{traffic}** Klicks und einem AdWords-Wertverlust von **{val}**.",
         "rd_100_title": "#### 4. Komplette Verluste (Aus Top 100 gefallen)",
         "rd_100_empty": "Keine Keywords aus den Top 100 gefallen.",
+        "rd_100_desc": "Keywords, die vollständig aus den Top 100 Rankings herausgefallen sind, was einen kompletten Verlust der organischen Sichtbarkeit für diese Begriffe bedeutet. Betroffen: **{count}** Keywords mit einem Suchvolumen von **{vol}**, einem geschätzten Traffic-Verlust von **{traffic}** Klicks und einem AdWords-Wertverlust von **{val}**.",
         "rd_sum_vol": "Angezeigtes Suchvolumen:",
         "rd_sum_traf": "(Geschätzter Traffic-Verlust:",
         "rd_sum_clicks": "Verlorene Klicks gesamt:",
@@ -1690,6 +1698,12 @@ if uploaded_file is not None and st.session_state['analyzed']:
             st.markdown("<div id='top3-drops'></div>", unsafe_allow_html=True)
             st.markdown(t["rd_t3_title"])
             if not f_top3.empty:
+                t_vol = format_num(int(f_top3['Search Volume'].sum()))
+                t_traffic = format_num(int(f_top3['Traffic Loss'].sum()))
+                t_val = f"{format_num(f_top3['Lost Value €'].sum(), 2)} €" if lang == "DE" else f"€{format_num(f_top3['Lost Value €'].sum(), 2)}"
+                t_count = format_num(len(f_top3))
+                desc_text = t["rd_t3_desc"].format(count=t_count, vol=t_vol, traffic=t_traffic, val=t_val)
+                st.markdown(desc_text)
                 st.write(f"{t['rd_sum_vol']} **{format_num(int(f_top3['Search Volume'].sum()))}**")
                 display_styled_dataframe(f_top3[['Keyword', 'Position Change', 'Position#1', 'Position#2', 'Search Volume', 'Traffic Loss', 'Lost Value €', 'Directory', 'URL']], sort_col='Search Volume')
             else:
@@ -1698,6 +1712,12 @@ if uploaded_file is not None and st.session_state['analyzed']:
             st.markdown("<div id='top10-drops'></div>", unsafe_allow_html=True)
             st.markdown(t["rd_t10_title"])
             if not f_top10.empty:
+                t_vol = format_num(int(f_top10['Search Volume'].sum()))
+                t_traffic = format_num(int(f_top10['Traffic Loss'].sum()))
+                t_val = f"{format_num(f_top10['Lost Value €'].sum(), 2)} €" if lang == "DE" else f"€{format_num(f_top10['Lost Value €'].sum(), 2)}"
+                t_count = format_num(len(f_top10))
+                desc_text = t["rd_t10_desc"].format(count=t_count, vol=t_vol, traffic=t_traffic, val=t_val)
+                st.markdown(desc_text)
                 st.write(f"{t['rd_sum_vol']} **{format_num(int(f_top10['Search Volume'].sum()))}**")
                 display_styled_dataframe(f_top10[['Keyword', 'Position Change', 'Position#1', 'Position#2', 'Search Volume', 'Traffic Loss', 'Lost Value €', 'Directory', 'URL']], sort_col='Search Volume')
             else:
@@ -1705,6 +1725,12 @@ if uploaded_file is not None and st.session_state['analyzed']:
 
             st.markdown(t["rd_p2_title"])
             if not f_page2.empty:
+                t_vol = format_num(int(f_page2['Search Volume'].sum()))
+                t_traffic = format_num(int(f_page2['Traffic Loss'].sum()))
+                t_val = f"{format_num(f_page2['Lost Value €'].sum(), 2)} €" if lang == "DE" else f"€{format_num(f_page2['Lost Value €'].sum(), 2)}"
+                t_count = format_num(len(f_page2))
+                desc_text = t["rd_p2_desc"].format(count=t_count, vol=t_vol, traffic=t_traffic, val=t_val)
+                st.markdown(desc_text)
                 st.write(f"{t['rd_sum_vol']} **{format_num(int(f_page2['Search Volume'].sum()))}**")
                 display_styled_dataframe(f_page2[['Keyword', 'Position Change', 'Position#1', 'Position#2', 'Search Volume', 'Traffic Loss', 'Lost Value €', 'Directory', 'URL']], sort_col='Search Volume')
             else:
@@ -1712,6 +1738,12 @@ if uploaded_file is not None and st.session_state['analyzed']:
 
             st.markdown(t["rd_100_title"])
             if not f_total.empty:
+                t_vol = format_num(int(f_total['Search Volume'].sum()))
+                t_traffic = format_num(int(f_total['Traffic Loss'].sum()))
+                t_val = f"{format_num(f_total['Lost Value €'].sum(), 2)} €" if lang == "DE" else f"€{format_num(f_total['Lost Value €'].sum(), 2)}"
+                t_count = format_num(len(f_total))
+                desc_text = t["rd_100_desc"].format(count=t_count, vol=t_vol, traffic=t_traffic, val=t_val)
+                st.markdown(desc_text)
                 st.write(f"{t['rd_sum_vol']} **{format_num(int(f_total['Search Volume'].sum()))}**")
                 display_styled_dataframe(f_total[['Keyword', 'Position Change', 'Position#1', 'Position#2', 'Search Volume', 'Traffic Loss', 'Lost Value €', 'Directory', 'URL']], sort_col='Search Volume')
             else:
