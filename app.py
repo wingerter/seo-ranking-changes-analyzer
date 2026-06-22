@@ -1369,9 +1369,9 @@ if uploaded_file is not None and st.session_state['analyzed']:
             display_styled_dataframe(f_df, sort_col='Clicks Change', ascending=False)
 
     elif mode_key == "sistrix":
-        tab_sum, tab_d, tab1, tab2, tab3, tab4, tab5 = st.tabs([
-            t["tab_summary"], t["tab_dir"], t["tab_cluster"], t["tab_drops"],
-            t["tab_lhf"], t["tab_winners"], t["tab_all"]
+        tab_sum, tab2, tab4, tab3, tab_d, tab1, tab5 = st.tabs([
+            t["tab_summary"], t["tab_drops"], t["tab_winners"], t["tab_lhf"],
+            t["tab_dir"], t["tab_cluster"], t["tab_all"]
         ], key="main_tabs", on_change=on_tab_change)
 
         with tab_sum:
