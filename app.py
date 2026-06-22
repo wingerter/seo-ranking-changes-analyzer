@@ -1768,7 +1768,6 @@ if uploaded_file is not None and st.session_state['analyzed']:
         with tab4:
             st.subheader(t["win_sub_sistrix"])
             if not winners.empty:
-                display_styled_dataframe(winners[['Keyword', 'Position Change', 'Position#1', 'Position#2', 'Search Volume', 'Traffic Gain', 'Directory']], sort_col='Search Volume')
                 fig_win = px.scatter(winners, x="Search Volume", y="Position#2",
                                      size="Search Volume", color="Directory",
                                      hover_name="Keyword", title=t["win_chart_title"],
@@ -1777,6 +1776,7 @@ if uploaded_file is not None and st.session_state['analyzed']:
                 fig_win.update_yaxes(autorange="reversed")
                 style_plotly_fig(fig_win)
                 st.plotly_chart(fig_win, use_container_width=True)
+                display_styled_dataframe(winners[['Keyword', 'Position Change', 'Position#1', 'Position#2', 'Search Volume', 'Traffic Gain', 'Directory']], sort_col='Search Volume')
             else:
                 st.info(t["win_empty"])
 
