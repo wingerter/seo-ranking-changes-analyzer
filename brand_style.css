@@ -103,6 +103,14 @@ hr.hr--black, .stMarkdown hr.hr--black { background-color: #232323 !important; }
     margin-bottom: 1rem !important;
 }
 
+/* --- DataFrames & Tables — white background --- */
+.stDataFrame, [data-testid="stDataFrame"],
+[data-testid="stTable"],
+.stDataFrame [data-testid="stDataFrameResizable"],
+.stDataFrame iframe {
+    background-color: #ffffff !important;
+}
+
 /* Ensure inner elements of keyed containers also have white background */
 .st-key-exec_summary_container > div,
 .st-key-exec_summary_container [data-testid="stVerticalBlockBorderWrapper"],
