@@ -229,15 +229,16 @@ section[data-testid="stSidebar"] .stButton > button[kind="secondary"] {
 
 /* Input Fields & Selection outline */
 [data-testid="stTextInput"] div[data-baseweb="input"],
-[data-testid="stSelectbox"] div[data-baseweb="select"] {
+[data-testid="stSelectbox"] div[data-baseweb="select"] > div {
     background-color: #f0f2f6 !important;
     border: 1px solid transparent !important;
     border-radius: 8px !important;
+    box-shadow: none !important;
     transition: all 120ms ease !important;
 }
 
 [data-testid="stTextInput"] div[data-baseweb="input"]:focus-within,
-[data-testid="stSelectbox"] div[data-baseweb="select"]:focus-within {
+[data-testid="stSelectbox"] div[data-baseweb="select"] > div:focus-within {
     border-color: #993333 !important;
     box-shadow: 0 0 0 3px rgba(153, 51, 51, 0.2) !important;
 }
