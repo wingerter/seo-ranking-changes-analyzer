@@ -24,8 +24,10 @@ if 'analyzed' not in st.session_state:
     st.session_state['analyzed'] = False
 if 'print_mode' not in st.session_state:
     st.session_state['print_mode'] = False
+if 'show_faq' not in st.session_state:
+    st.session_state['show_faq'] = False
 
-# Reset print mode if not analyzed to prevent rendering print preview of empty setup screen
+# Reset print mode and FAQ if not analyzed to prevent rendering print preview of empty setup screen
 if not st.session_state['analyzed']:
     st.session_state['print_mode'] = False
 
@@ -827,6 +829,12 @@ if uploaded_file is not None:
 # Sidebar — Logo (full width) + Legal
 st.sidebar.markdown("---")
 st.sidebar.image("assets/logo-horizontal.png", use_container_width=True)
+
+faq_btn_label = "❔ FAQ / Häufige Fragen" if lang == "DE" else "❔ FAQ / Frequently Asked Questions"
+if st.sidebar.button(faq_btn_label, key="btn_faq_sidebar", use_container_width=True):
+    st.session_state['show_faq'] = True
+    st.rerun()
+
 with st.sidebar.expander(t["legal_header"]):
     st.markdown(t["imprint_body"])
     st.markdown("---")
@@ -836,6 +844,75 @@ with st.sidebar.expander(t["legal_header"]):
 # MAIN ANALYSIS BLOCK
 # =============================================================================
 pct_sign = " %" if lang == "DE" else "%"
+
+def render_faq_page(lang):
+    # Back button
+    back_lbl = "◀ Zurück zum Dashboard" if lang == "DE" else "◀ Back to Dashboard"
+    if st.button(back_lbl, type="secondary", key="btn_faq_top"):
+        st.session_state['show_faq'] = False
+        st.rerun()
+
+    faq_title = "❔ FAQ — Häufig gestellte Fragen" if lang == "DE" else "❔ FAQ — Frequently Asked Questions"
+    st.markdown(f"## {faq_title}")
+    st.markdown("<hr class='hr--red'>", unsafe_allow_html=True)
+
+    if lang == "DE":
+        st.markdown("""
+### 1. Welche Datenformate werden unterstützt?
+* **Google Search Console (GSC):** Exportieren Sie einen **Datumsvergleich** aus GSC (Leistung -> Suchergebnisse -> Datum -> Vergleichen -> CSV-Export). Die Datei muss exakt 9 Spalten haben.
+* **Sistrix:** Exportieren Sie einen **Keyword-Vergleich** aus Sistrix (Keywords -> Vergleichen -> CSV-Export). Die Datei muss Spalten wie `Keyword`, `Position#1`, `Position#2`, `Search Volume` und `URL` enthalten.
+
+### 2. Sind meine Daten sicher?
+**Ja, absolut.** Alle hochgeladenen Dateien werden ausschließlich im flüchtigen Arbeitsspeicher (RAM) des Servers verarbeitet. Es werden keine Daten auf der Festplatte gespeichert, in Datenbanken abgelegt oder an externe APIs übertragen. Sobald Sie den Browser-Tab schließen oder die Seite neu laden, werden alle Daten unwiderruflich gelöscht.
+
+### 3. Wie funktioniert das Keyword-Clustering?
+Das Tool gruppiert Keywords vollautomatisch anhand von wiederkehrenden Hauptbegriffen (Head-Terms) in Clustern, ohne dass eine externe Schnittstelle (wie eine kostenpflichtige OpenAI- oder Google-API) aufgerufen werden muss. Dies geschieht in Millisekunden lokal im Code.
+
+### 4. Was bedeutet „Monetärer Verlust“ (Sistrix)?
+Im Sistrix-Modus berechnen wir den AdWords-äquivalenten Verlustwert. Das Tool ermittelt anhand des durchschnittlichen CPCs der Keywords, wie viel Budget Sie bei Google Ads ausgeben müssten, um den durch den organischen Ranking-Absturz verlorenen Traffic wieder einzukaufen.
+
+### 5. Was sind „Low Hanging Fruits“?
+Dies sind Keywords, die aktuell auf Seite 2 (Positionen 11–15) ranken, aber bereits ein hohes Suchvolumen (Sistrix) oder hohe Impressionen (GSC) aufweisen. Mit nur geringem Optimierungsaufwand können diese auf Seite 1 geschoben werden, um schnelle Traffic-Gewinne zu erzielen.
+
+### 6. Wie funktioniert die Suchintent-Klassifizierung?
+Die Suchanfragen werden nach bestimmten Mustern analysiert:
+* **KNOW:** Informative Suchen (z.B. Fragen wie "wie", "was", "warum").
+* **DO (Transactional):** Kaufabsichten (z.B. Keywords mit "kaufen", "bestellen", "preis").
+* **regional:CITY / regional:COUNTRY:** Suchen mit lokalem oder geografischem Bezug (z.B. Städtenamen oder Länderspezifikationen).
+        """)
+    else:
+        st.markdown("""
+### 1. Which data formats are supported?
+* **Google Search Console (GSC):** Export a **date comparison** from GSC (Performance -> Search Results -> Date -> Compare -> Export as CSV). The file must have exactly 9 columns.
+* **Sistrix:** Export a **keyword comparison** from Sistrix (Keywords -> Compare -> Export as CSV). The file must contain columns like `Keyword`, `Position#1`, `Position#2`, `Search Volume`, and `URL`.
+
+### 2. Is my data secure?
+**Yes, absolutely.** All uploaded files are processed exclusively in the transient RAM of the server. No data is stored on disk, saved in databases, or sent to external APIs. The moment you close the browser tab or reload the page, all data is permanently erased.
+
+### 3. How does keyword clustering work?
+The tool automatically groups keywords based on recurring head terms into clusters, without calling any external APIs (like paid OpenAI or Google APIs). This happens locally in your browser/server in milliseconds.
+
+### 4. What does "Monetary Loss" (Sistrix) mean?
+In Sistrix mode, we calculate the AdWords-equivalent traffic loss value. Based on the average CPC of the keywords, the tool estimates how much budget you would have to spend on Google Ads to buy back the organic traffic lost from the ranking drops.
+
+### 5. What are "Low-Hanging Fruits"?
+These are keywords currently ranking on page 2 (positions 11–15) that already have high search volume (Sistrix) or high impressions (GSC). With minor optimization efforts, these can be pushed to page 1 to generate quick traffic wins.
+
+### 6. How does search intent classification work?
+Keywords are analyzed based on specific intent patterns:
+* **KNOW:** Informative queries (e.g. questions like "how to", "what is", "why").
+* **DO (Transactional):** Commercial intents (e.g. terms with "buy", "order", "price").
+* **regional:CITY / regional:COUNTRY:** Queries with local or geographic references (e.g. city names or country specs).
+        """)
+
+    st.markdown("<hr class='hr--grey'>", unsafe_allow_html=True)
+    if st.button(back_lbl, type="secondary", key="btn_faq_bottom"):
+        st.session_state['show_faq'] = False
+        st.rerun()
+
+if st.session_state.get('show_faq', False):
+    render_faq_page(lang)
+    st.stop()
 
 # Check if we have an uploaded file or a cached backup dataframe
 has_data = uploaded_file is not None or (st.session_state.get('df_backup') is not None and st.session_state.get('mode_backup') == mode_key)
