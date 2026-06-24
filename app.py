@@ -9,6 +9,7 @@ import re
 import base64
 import time
 import subprocess
+import contextlib
 from collections import Counter
 import streamlit.components.v1 as components
 
@@ -224,6 +225,12 @@ translations = {
         "lhf_diff_label": "Difficulty",
         "lhf_diff_help": "Estimated ranking difficulty based on search volume or impressions",
         "dir_chart_title_tree": "Lost Search Volume Distribution by Directory (Treemap)",
+        "btn_export_pdf": "📄 Export PDF Report",
+        "print_mode_title": "📄 PDF Export - Print Preview",
+        "print_mode_desc": "All sections of the dashboard are listed below. Click 'Save PDF' to download the compiled report.",
+        "btn_save_pdf": "📄 Save PDF",
+        "btn_back_dashboard": "◀ Back to Dashboard",
+        "pdf_generating": "Generating PDF...",
         # Footer / Legal
         "footer": "MIT License &copy; 2026 Benjamin &quot;SEOux Indianer&quot; Wingerter | Created in Munich &amp; Bangkok with ❤️ | <a href='https://seouxindianer.de' target='_blank' style='color: #2ea3f2; text-decoration: underline;'>seouxindianer.de</a> | Co-developed with Antigravity 🤖",
         "legal_header": "Legal & Privacy Policy",
@@ -394,6 +401,12 @@ You have the right to access, rectify, erase, or restrict the processing of your
         "lhf_diff_label": "Schwierigkeit",
         "lhf_diff_help": "Geschätzte Ranking-Schwierigkeit basierend auf Suchvolumen oder Impressionen",
         "dir_chart_title_tree": "Verteilung des verlorenen Suchvolumens nach Verzeichnis (Treemap)",
+        "btn_export_pdf": "📄 PDF Report exportieren",
+        "print_mode_title": "📄 PDF Export - Druckansicht",
+        "print_mode_desc": "Alle Bereiche des Dashboards sind nachfolgend aufgeführt. Klicke auf 'PDF speichern', um den fertigen Bericht herunterzuladen.",
+        "btn_save_pdf": "📄 PDF speichern",
+        "btn_back_dashboard": "◀ Zurück zum Dashboard",
+        "pdf_generating": "PDF wird generiert...",
         # Footer / Legal
         "footer": "MIT License &copy; 2026 Benjamin &quot;SEOux Indianer&quot; Wingerter | Erstellt in München &amp; Bangkok mit ❤️ | <a href='https://seouxindianer.de' target='_blank' style='color: #2ea3f2; text-decoration: underline;'>seouxindianer.de</a> | Mitentwickelt von Antigravity 🤖",
         "legal_header": "Rechtliches / Impressum",
@@ -560,7 +573,7 @@ def display_styled_dataframe(df_to_show, sort_col, ascending=False):
     format_dict = {}
 
     if loss_cols:
-        styler = styler.map(lambda x: 'color: #993333; font-weight: bold;' if pd.notnull(x) and x > 0 else '', subset=loss_cols)
+        styler = styler.map(lambda x: 'color: #d28063; font-weight: bold;' if pd.notnull(x) and x > 0 else '', subset=loss_cols)
         for c in loss_cols:
             if c == 'Lost Value €':
                 if lang == "EN":
@@ -588,22 +601,122 @@ def display_styled_dataframe(df_to_show, sort_col, ascending=False):
             format_dict[c] = lambda x: "-" if pd.notnull(x) and x == 101 else (format_num(x, 2) if pd.notnull(x) else "")
 
     if 'Position Change' in df_to_show.columns:
-        styler = styler.map(lambda x: 'color: #90c274; font-weight: bold;' if pd.notnull(x) and x > 0 else ('color: #993333; font-weight: bold;' if pd.notnull(x) and x < 0 else ''), subset=['Position Change'])
+        styler = styler.map(lambda x: 'color: #90c274; font-weight: bold;' if pd.notnull(x) and x > 0 else ('color: #d28063; font-weight: bold;' if pd.notnull(x) and x < 0 else ''), subset=['Position Change'])
         format_dict['Position Change'] = lambda x: f"▲ +{format_num(abs(x), 2)}" if pd.notnull(x) and x > 0 else (f"▼ -{format_num(abs(x), 2)}" if pd.notnull(x) and x < 0 else format_num(0.0, 2))
 
     for c in ['Traffic Change', 'Clicks Change']:
         if c in df_to_show.columns:
-            styler = styler.map(lambda x: 'color: #90c274; font-weight: bold;' if pd.notnull(x) and x > 0 else ('color: #993333; font-weight: bold;' if pd.notnull(x) and x < 0 else ''), subset=[c])
+            styler = styler.map(lambda x: 'color: #90c274; font-weight: bold;' if pd.notnull(x) and x > 0 else ('color: #d28063; font-weight: bold;' if pd.notnull(x) and x < 0 else ''), subset=[c])
             format_dict[c] = lambda x: f"▲ +{format_num(x)}" if pd.notnull(x) and x > 0 else (f"▼ -{format_num(abs(x))}" if pd.notnull(x) and x < 0 else "0")
 
     styler = styler.format(format_dict)
-    st.dataframe(styler, use_container_width=True)
+    if st.session_state.get('print_mode', False):
+        st.markdown(styler.to_html(), unsafe_allow_html=True)
+    else:
+        st.dataframe(styler, use_container_width=True)
 
 # =============================================================================
-# APP TITLE
+# APP TITLE & PDF EXPORT OVERRIDE
 # =============================================================================
+
+# Print mode style override (hides sidebar/header from screen during print preview)
+if st.session_state.get("print_mode", False):
+    st.markdown("""
+        <style>
+            [data-testid="stSidebar"] {
+                display: none !important;
+            }
+            [data-testid="stHeader"] {
+                display: none !important;
+            }
+            .main .block-container {
+                max-width: 1200px !important;
+                padding-top: 1rem !important;
+                padding-bottom: 2rem !important;
+            }
+        </style>
+    """, unsafe_allow_html=True)
+    
+    # Render the Print Preview Toolbar
+    with st.container(border=True, key="print_toolbar"):
+        col_title, col_save, col_back = st.columns([6, 2.5, 2.5])
+        with col_title:
+            st.markdown(f"<h3 style='margin: 0; padding: 0;'>{t['print_mode_title']}</h3>", unsafe_allow_html=True)
+            st.write(t["print_mode_desc"])
+        with col_save:
+            html_code = f"""
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+            <script>
+            function savePDF() {{
+                const btn = document.getElementById("pdf-btn");
+                btn.innerHTML = "{t['pdf_generating']}";
+                btn.disabled = true;
+                
+                const element = window.parent.document.querySelector('[data-testid="stAppViewContainer"]');
+                
+                const opt = {{
+                    margin:       [12, 12, 12, 12],
+                    filename:     'seo_ranking_report.pdf',
+                    image:        {{ type: 'jpeg', quality: 0.98 }},
+                    html2canvas:  {{ 
+                        scale: 1.5, 
+                        useCORS: true, 
+                        logging: false,
+                        letterRendering: true
+                    }},
+                    jsPDF:        {{ unit: 'mm', format: 'a4', orientation: 'portrait' }},
+                    pagebreak:    {{ mode: ['avoid-all', 'css', 'legacy'] }}
+                }};
+                
+                html2pdf().set(opt).from(element).save().then(() => {{
+                    btn.innerHTML = "{t['btn_save_pdf']}";
+                    btn.disabled = false;
+                }}).catch(err => {{
+                    console.error("PDF generation failed:", err);
+                    btn.innerHTML = "Error! Try again";
+                    btn.disabled = false;
+                }});
+            }}
+            </script>
+            <button id="pdf-btn" onclick="savePDF()" style="
+                background-color: #d28063;
+                color: #ffffff;
+                border: 1px solid #d28063;
+                border-radius: 8px;
+                padding: 0.5rem 1rem;
+                font-weight: 600;
+                font-family: 'Open Sans', Arial, sans-serif;
+                cursor: pointer;
+                width: 100%;
+                height: 38px;
+                box-sizing: border-box;
+                transition: all 120ms ease;
+            ">
+                {t['btn_save_pdf']}
+            </button>
+            <style>
+            button:hover {{
+                background-color: #7e2929 !important;
+                border-color: #7e2929 !important;
+            }}
+            </style>
+            """
+            components.html(html_code, height=45)
+        with col_back:
+            if st.button(t["btn_back_dashboard"], key="back_from_print", type="secondary", use_container_width=True):
+                st.session_state['print_mode'] = False
+                st.rerun()
+
 st.title(t[f"title_{mode_key}"])
 st.markdown(t[f"subtitle_{mode_key}"])
+
+# Show export button if analyzed and not in print mode
+if st.session_state.get('analyzed', False) and not st.session_state.get('print_mode', False):
+    btn_col_1, btn_col_2 = st.columns([8, 2])
+    with btn_col_2:
+        if st.button(t["btn_export_pdf"], key="trigger_print_mode", type="secondary", use_container_width=True):
+            st.session_state['print_mode'] = True
+            st.rerun()
 
 # =============================================================================
 # LOADING OVERLAY
@@ -1029,10 +1142,19 @@ if uploaded_file is not None and st.session_state['analyzed']:
             st.session_state["main_tabs"] = t["tab_drops"]
 
     if mode_key == "gsc":
-        tab_sum, tab2, tab5, tab4, tab3, tab1, tab6 = st.tabs([
-            t["tab_summary"], t["tab_drops"], t["tab_winners"], t["tab_lhf"],
-            t["tab_losses"], t["tab_cluster"], t["tab_all"]
-        ], key="main_tabs", on_change=on_tab_change)
+        if st.session_state.get('print_mode', False):
+            tab_sum = contextlib.nullcontext()
+            tab2 = contextlib.nullcontext()
+            tab5 = contextlib.nullcontext()
+            tab4 = contextlib.nullcontext()
+            tab3 = contextlib.nullcontext()
+            tab1 = contextlib.nullcontext()
+            tab6 = contextlib.nullcontext()
+        else:
+            tab_sum, tab2, tab5, tab4, tab3, tab1, tab6 = st.tabs([
+                t["tab_summary"], t["tab_drops"], t["tab_winners"], t["tab_lhf"],
+                t["tab_losses"], t["tab_cluster"], t["tab_all"]
+            ], key="main_tabs", on_change=on_tab_change)
 
         with tab_sum:
             st.header(t["kpi_header_gsc"])
@@ -1086,14 +1208,14 @@ if uploaded_file is not None and st.session_state['analyzed']:
             if lang == "DE":
                 story_text = f"""<p style='font-family: "Open Sans", sans-serif; color: #444444; line-height: 1.6; font-size: 0.95rem; margin-bottom: 1rem;'>
     Im analysierten Zeitraum verzeichnete die Website eine
-    <strong style='color: #232323;'>Netto-Klick-Veränderung von <span style='color: {"#90c274" if net_clicks > 0 else "#993333"}; font-weight: bold;'>{net_val_str}</span> ({pct_val_str})</strong>.
+    <strong style='color: #232323;'>Netto-Klick-Veränderung von <span style='color: {"#90c274" if net_clicks > 0 else "#d28063"}; font-weight: bold;'>{net_val_str}</span> ({pct_val_str})</strong>.
     Dieser Wert setzt sich aus einem <strong>Gewinn von <span style='color: #90c274; font-weight: bold;'>{gain_val_str}</span> Klicks</strong>
-    und einem <strong>Verlust von <span style='color: #993333; font-weight: bold;'>{loss_val_str}</span> Klicks</strong> zusammen.
+    und einem <strong>Verlust von <span style='color: #d28063; font-weight: bold;'>{loss_val_str}</span> Klicks</strong> zusammen.
     </p>
     <h4 style='font-family: "Raleway", sans-serif; font-weight: 700; color: #232323; margin-top: 1rem; margin-bottom: 0.5rem;'>Haupttreiber des Klick-Verlusts:</h4>
     <ul style='font-family: "Open Sans", sans-serif; color: #444444; line-height: 1.5; font-size: 0.95rem; padding-left: 1.2rem; margin-top: 0;'>
-    <li style='margin-bottom: 0.5rem;'><strong>Abstürze aus den Top 3:</strong> <span style='font-weight: bold;'>{format_num(top3_count)} Keywords</span> sind aus den Top-Positionen (1-3) herausgerutscht. Verlust: <span style='color: #993333; font-weight: bold;'>{top3_loss} Klicks</span>.</li>
-    <li style='margin-bottom: 0.5rem;'><strong>Abstürze aus den Top 10:</strong> <span style='font-weight: bold;'>{format_num(top10_count)} Keywords</span> haben die erste Suchergebnisseite verlassen. Verlust: <span style='color: #993333; font-weight: bold;'>{top10_loss} Klicks</span>.</li>
+    <li style='margin-bottom: 0.5rem;'><strong>Abstürze aus den Top 3:</strong> <span style='font-weight: bold;'>{format_num(top3_count)} Keywords</span> sind aus den Top-Positionen (1-3) herausgerutscht. Verlust: <span style='color: #d28063; font-weight: bold;'>{top3_loss} Klicks</span>.</li>
+    <li style='margin-bottom: 0.5rem;'><strong>Abstürze aus den Top 10:</strong> <span style='font-weight: bold;'>{format_num(top10_count)} Keywords</span> haben die erste Suchergebnisseite verlassen. Verlust: <span style='color: #d28063; font-weight: bold;'>{top10_loss} Klicks</span>.</li>
     </ul>
     <h4 style='font-family: "Raleway", sans-serif; font-weight: 700; color: #232323; margin-top: 1rem; margin-bottom: 0.5rem;'>Quick-Wins / Handlungsempfehlungen:</h4>
     <ul style='font-family: "Open Sans", sans-serif; color: #444444; line-height: 1.5; font-size: 0.95rem; padding-left: 1.2rem; margin-top: 0;'>
@@ -1103,14 +1225,14 @@ if uploaded_file is not None and st.session_state['analyzed']:
             else:
                 story_text = f"""<p style='font-family: "Open Sans", sans-serif; color: #444444; line-height: 1.6; font-size: 0.95rem; margin-bottom: 1rem;'>
     During the analyzed timeframe, the website recorded a
-    <strong style='color: #232323;'>Net Click Change of <span style='color: {"#90c274" if net_clicks > 0 else "#993333"}; font-weight: bold;'>{net_val_str}</span> ({pct_val_str})</strong>.
+    <strong style='color: #232323;'>Net Click Change of <span style='color: {"#90c274" if net_clicks > 0 else "#d28063"}; font-weight: bold;'>{net_val_str}</span> ({pct_val_str})</strong>.
     This value is composed of a <strong>gain of <span style='color: #90c274; font-weight: bold;'>{gain_val_str}</span> clicks</strong>
-    and a <strong>loss of <span style='color: #993333; font-weight: bold;'>{loss_val_str}</span> clicks</strong>.
+    and a <strong>loss of <span style='color: #d28063; font-weight: bold;'>{loss_val_str}</span> clicks</strong>.
     </p>
     <h4 style='font-family: "Raleway", sans-serif; font-weight: 700; color: #232323; margin-top: 1rem; margin-bottom: 0.5rem;'>Main Drivers of Click Loss:</h4>
     <ul style='font-family: "Open Sans", sans-serif; color: #444444; line-height: 1.5; font-size: 0.95rem; padding-left: 1.2rem; margin-top: 0;'>
-    <li style='margin-bottom: 0.5rem;'><strong>Drops from Top 3:</strong> <span style='font-weight: bold;'>{format_num(top3_count)} keywords</span> slipped out of the top positions (1-3). This caused a loss of <span style='color: #993333; font-weight: bold;'>{top3_loss} clicks</span>.</li>
-    <li style='margin-bottom: 0.5rem;'><strong>Drops from Top 10:</strong> <span style='font-weight: bold;'>{format_num(top10_count)} keywords</span> fell off page 1, resulting in a loss of <span style='color: #993333; font-weight: bold;'>{top10_loss} clicks</span>.</li>
+    <li style='margin-bottom: 0.5rem;'><strong>Drops from Top 3:</strong> <span style='font-weight: bold;'>{format_num(top3_count)} keywords</span> slipped out of the top positions (1-3). This caused a loss of <span style='color: #d28063; font-weight: bold;'>{top3_loss} clicks</span>.</li>
+    <li style='margin-bottom: 0.5rem;'><strong>Drops from Top 10:</strong> <span style='font-weight: bold;'>{format_num(top10_count)} keywords</span> fell off page 1, resulting in a loss of <span style='color: #d28063; font-weight: bold;'>{top10_loss} clicks</span>.</li>
     </ul>
     <h4 style='font-family: "Raleway", sans-serif; font-weight: 700; color: #232323; margin-top: 1rem; margin-bottom: 0.5rem;'>Quick-Wins / Actionable Recommendations:</h4>
     <ul style='font-family: "Open Sans", sans-serif; color: #444444; line-height: 1.5; font-size: 0.95rem; padding-left: 1.2rem; margin-top: 0;'>
@@ -1180,7 +1302,7 @@ if uploaded_file is not None and st.session_state['analyzed']:
                         st.metric(t["kpi_worst_cluster"], worst_cluster['Cluster'], worst_delta)
                     top_bottom = pd.concat([cluster_net.nlargest(3, 'Clicks Change'), cluster_net.nsmallest(3, 'Clicks Change')]).drop_duplicates().sort_values('Clicks Change')
                     fig_net = px.bar(top_bottom, x='Clicks Change', y='Cluster', orientation='h',
-                                     color='Clicks Change', color_continuous_scale=[[0.0, '#993333'], [0.5, '#dfdfdf'], [1.0, '#90c274']], height=200)
+                                     color='Clicks Change', color_continuous_scale=[[0.0, '#d28063'], [0.5, '#dfdfdf'], [1.0, '#90c274']], height=200)
                     style_plotly_fig(fig_net)
                     fig_net.update_layout(margin=dict(l=10, r=10, t=25, b=10))
                     st.plotly_chart(fig_net, use_container_width=True)
@@ -1231,6 +1353,8 @@ if uploaded_file is not None and st.session_state['analyzed']:
 
 
         with tab1:
+            if st.session_state.get('print_mode', False):
+                st.markdown(f"<h2 class='print-page-break'>{t['tab_cluster']}</h2>", unsafe_allow_html=True)
             st.subheader(t["cl_sub"])
             st.markdown(t["cl_desc"])
             if not losers.empty:
@@ -1256,8 +1380,13 @@ if uploaded_file is not None and st.session_state['analyzed']:
                 st.info(t["cl_empty"])
 
         with tab2:
+            if st.session_state.get('print_mode', False):
+                st.markdown(f"<h2 class='print-page-break'>{t['tab_drops']}</h2>", unsafe_allow_html=True)
             st.subheader(t["rd_sub"])
-            kw_filter = st.text_input(t["rd_filter"]).strip().lower()
+            if not st.session_state.get('print_mode', False):
+                kw_filter = st.text_input(t["rd_filter"]).strip().lower()
+            else:
+                kw_filter = ""
             f_top3 = top3_drops[top3_drops['Keyword'].astype(str).str.lower().str.contains(kw_filter, na=False)] if kw_filter else top3_drops
             f_top10 = top10_drops[top10_drops['Keyword'].astype(str).str.lower().str.contains(kw_filter, na=False)] if kw_filter else top10_drops
             f_page2 = page2_drops[page2_drops['Keyword'].astype(str).str.lower().str.contains(kw_filter, na=False)] if kw_filter else page2_drops
@@ -1314,10 +1443,14 @@ if uploaded_file is not None and st.session_state['analyzed']:
                 st.info(t["rd_100_empty"])
 
         with tab3:
+            if st.session_state.get('print_mode', False):
+                st.markdown(f"<h2 class='print-page-break'>{t['tab_losses']}</h2>", unsafe_allow_html=True)
             st.subheader(t["cd_sub"])
             display_styled_dataframe(losers[['Keyword', 'Position Change', 'Position_Old', 'Position_New', 'Clicks Loss', 'Clicks_Old', 'Clicks_New']], sort_col='Clicks Loss')
 
         with tab4:
+            if st.session_state.get('print_mode', False):
+                st.markdown(f"<h2 class='print-page-break'>{t['tab_lhf']}</h2>", unsafe_allow_html=True)
             st.subheader(t["lhf_sub"], anchor="low-hanging-fruits")
             st.markdown(t["lhf_desc_gsc"])
             if not low_hanging.empty:
@@ -1331,30 +1464,35 @@ if uploaded_file is not None and st.session_state['analyzed']:
                     format_dict[c] = lambda x: format_num(x) if pd.notnull(x) else ""
                 for c in ['Position_Old', 'Position_New']:
                     format_dict[c] = lambda x: "-" if pd.notnull(x) and x == 101 else (format_num(x, 2) if pd.notnull(x) else "")
-                styler = styler.map(lambda x: 'color: #90c274; font-weight: bold;' if pd.notnull(x) and x > 0 else ('color: #993333; font-weight: bold;' if pd.notnull(x) and x < 0 else ''), subset=['Position Change'])
+                styler = styler.map(lambda x: 'color: #90c274; font-weight: bold;' if pd.notnull(x) and x > 0 else ('color: #d28063; font-weight: bold;' if pd.notnull(x) and x < 0 else ''), subset=['Position Change'])
                 format_dict['Position Change'] = lambda x: f"▲ +{format_num(abs(x), 2)}" if pd.notnull(x) and x > 0 else (f"▼ -{format_num(abs(x), 2)}" if pd.notnull(x) and x < 0 else format_num(0.0, 2))
                 styler = styler.format(format_dict)
-                st.dataframe(
-                    styler,
-                    column_config={
-                        "Potential Score": st.column_config.ProgressColumn(
-                            "Potential Score",
-                            help=t.get("lhf_pot_help", "Calculated potential (0-10)"),
-                            format="%.1f",
-                            min_value=0.0,
-                            max_value=10.0,
-                        ),
-                        "Difficulty": st.column_config.TextColumn(
-                            t.get("lhf_diff_label", "Difficulty"),
-                            help=t.get("lhf_diff_help", "Estimated difficulty")
-                        )
-                    },
-                    use_container_width=True
-                )
+                if st.session_state.get('print_mode', False):
+                    st.markdown(styler.to_html(), unsafe_allow_html=True)
+                else:
+                    st.dataframe(
+                        styler,
+                        column_config={
+                            "Potential Score": st.column_config.ProgressColumn(
+                                "Potential Score",
+                                help=t.get("lhf_pot_help", "Calculated potential (0-10)"),
+                                format="%.1f",
+                                min_value=0.0,
+                                max_value=10.0,
+                            ),
+                            "Difficulty": st.column_config.TextColumn(
+                                t.get("lhf_diff_label", "Difficulty"),
+                                help=t.get("lhf_diff_help", "Estimated difficulty")
+                            )
+                        },
+                        use_container_width=True
+                    )
             else:
                 st.info(t["lhf_empty"])
 
         with tab5:
+            if st.session_state.get('print_mode', False):
+                st.markdown(f"<h2 class='print-page-break'>{t['tab_winners']}</h2>", unsafe_allow_html=True)
             st.subheader(t["win_sub_gsc"])
             if not winners.empty:
                 display_winners = winners[(winners['Position Change'] > 0) & (~((winners['Position_New'] > 11) & (winners['Position Change'] < 9)))]
@@ -1373,42 +1511,52 @@ if uploaded_file is not None and st.session_state['analyzed']:
             else:
                 st.info(t["win_empty"])
 
-        with tab6:
-            st.subheader(t["ad_sub"])
-            all_cols = ['Cluster', 'Search Intent', 'Keyword', 'Change', 'Position Change', 'Clicks Change',
-                        'Position_Old', 'Position_New', 'Impressions_Old', 'Impressions_New', 'Clicks_Old', 'Clicks_New']
-            all_cols = [c for c in all_cols if c in df.columns]
-            col_f1, col_f2, col_f3, col_f4 = st.columns(4)
-            with col_f1:
-                all_clusters = sorted(df['Cluster'].dropna().unique().tolist())
-                sel_cluster = st.multiselect(t["ad_filter_cluster"], options=all_clusters)
-            with col_f2:
-                all_intents = set()
-                for i in df['Search Intent'].dropna():
-                    for piece in i.split(', '):
-                        all_intents.add(piece)
-                sel_intent = st.multiselect(t["ad_filter_intent"], options=sorted(list(all_intents)))
-            with col_f3:
-                all_changes = sorted(df['Change'].dropna().unique().tolist())
-                sel_change = st.multiselect(t["ad_filter_change"], options=all_changes)
-            with col_f4:
-                search_kw = st.text_input(t["ad_filter_kw"], key="ad_kw")
-            f_df = df[all_cols].copy()
-            if sel_cluster:
-                f_df = f_df[f_df['Cluster'].isin(sel_cluster)]
-            if sel_intent:
-                f_df = f_df[f_df['Search Intent'].apply(lambda x: any(c in x for c in sel_intent))]
-            if sel_change:
-                f_df = f_df[f_df['Change'].isin(sel_change)]
-            if search_kw:
-                f_df = f_df[f_df['Keyword'].astype(str).str.lower().str.contains(search_kw.lower(), na=False)]
-            display_styled_dataframe(f_df, sort_col='Clicks Change', ascending=False)
+        if not st.session_state.get('print_mode', False):
+            with tab6:
+                st.subheader(t["ad_sub"])
+                all_cols = ['Cluster', 'Search Intent', 'Keyword', 'Change', 'Position Change', 'Clicks Change',
+                            'Position_Old', 'Position_New', 'Impressions_Old', 'Impressions_New', 'Clicks_Old', 'Clicks_New']
+                all_cols = [c for c in all_cols if c in df.columns]
+                col_f1, col_f2, col_f3, col_f4 = st.columns(4)
+                with col_f1:
+                    all_clusters = sorted(df['Cluster'].dropna().unique().tolist())
+                    sel_cluster = st.multiselect(t["ad_filter_cluster"], options=all_clusters)
+                with col_f2:
+                    all_intents = set()
+                    for i in df['Search Intent'].dropna():
+                        for piece in i.split(', '):
+                            all_intents.add(piece)
+                    sel_intent = st.multiselect(t["ad_filter_intent"], options=sorted(list(all_intents)))
+                with col_f3:
+                    all_changes = sorted(df['Change'].dropna().unique().tolist())
+                    sel_change = st.multiselect(t["ad_filter_change"], options=all_changes)
+                with col_f4:
+                    search_kw = st.text_input(t["ad_filter_kw"], key="ad_kw")
+                f_df = df[all_cols].copy()
+                if sel_cluster:
+                    f_df = f_df[f_df['Cluster'].isin(sel_cluster)]
+                if sel_intent:
+                    f_df = f_df[f_df['Search Intent'].apply(lambda x: any(c in x for c in sel_intent))]
+                if sel_change:
+                    f_df = f_df[f_df['Change'].isin(sel_change)]
+                if search_kw:
+                    f_df = f_df[f_df['Keyword'].astype(str).str.lower().str.contains(search_kw.lower(), na=False)]
+                display_styled_dataframe(f_df, sort_col='Clicks Change', ascending=False)
 
     elif mode_key == "sistrix":
-        tab_sum, tab2, tab4, tab3, tab_d, tab1, tab5 = st.tabs([
-            t["tab_summary"], t["tab_drops"], t["tab_winners"], t["tab_lhf"],
-            t["tab_dir"], t["tab_cluster"], t["tab_all"]
-        ], key="main_tabs", on_change=on_tab_change)
+        if st.session_state.get('print_mode', False):
+            tab_sum = contextlib.nullcontext()
+            tab2 = contextlib.nullcontext()
+            tab4 = contextlib.nullcontext()
+            tab3 = contextlib.nullcontext()
+            tab_d = contextlib.nullcontext()
+            tab1 = contextlib.nullcontext()
+            tab5 = contextlib.nullcontext()
+        else:
+            tab_sum, tab2, tab4, tab3, tab_d, tab1, tab5 = st.tabs([
+                t["tab_summary"], t["tab_drops"], t["tab_winners"], t["tab_lhf"],
+                t["tab_dir"], t["tab_cluster"], t["tab_all"]
+            ], key="main_tabs", on_change=on_tab_change)
 
         with tab_sum:
             st.header(t["kpi_header_sistrix"])
@@ -1495,14 +1643,14 @@ if uploaded_file is not None and st.session_state['analyzed']:
     <h4 style='font-family: "Raleway", sans-serif; font-weight: 700; color: #232323; margin-top: 1rem; margin-bottom: 0.5rem;'>Ranking-Veränderungen (Positions-Daten):</h4>
     <ul style='font-family: "Open Sans", sans-serif; color: #444444; line-height: 1.5; font-size: 0.95rem; padding-left: 1.2rem; margin-top: 0;'>
     <li style='margin-bottom: 0.5rem;'><strong>Positions-Gewinne:</strong> <span style='font-weight: bold;'>{format_num(gained_keywords_count)} Keywords</span> verbessert (Ø <span style='color: #90c274; font-weight: bold;'>+{format_num(avg_gain_pos, 1)} Positionen</span>, Gesamt-SV: <span style='font-weight: bold;'>{format_num(gained_keywords_sv)} SV</span>).</li>
-    <li style='margin-bottom: 0.5rem;'><strong>Positions-Verluste:</strong> <span style='font-weight: bold;'>{format_num(lost_keywords_count)} Keywords</span> verschlechtert (Ø <span style='color: #993333; font-weight: bold;'>-{format_num(avg_loss_pos, 1)} Positionen</span>, Gesamt-SV: <span style='font-weight: bold;'>{format_num(lost_keywords_sv)} SV</span>).</li>
-    <li style='margin-bottom: 0.5rem;'><strong>Gesamt-Tendenz:</strong> Ø Positions-Veränderung: <span style='font-weight: bold; color: {"#90c274" if avg_pos_change > 0 else "#993333"};'>{avg_pos_change_sign}{format_num(avg_pos_change, 2)} Positionen</span> (Gesamt-SV: <span style='font-weight: bold;'>{format_num(total_sv)} SV</span>).</li>
+    <li style='margin-bottom: 0.5rem;'><strong>Positions-Verluste:</strong> <span style='font-weight: bold;'>{format_num(lost_keywords_count)} Keywords</span> verschlechtert (Ø <span style='color: #d28063; font-weight: bold;'>-{format_num(avg_loss_pos, 1)} Positionen</span>, Gesamt-SV: <span style='font-weight: bold;'>{format_num(lost_keywords_sv)} SV</span>).</li>
+    <li style='margin-bottom: 0.5rem;'><strong>Gesamt-Tendenz:</strong> Ø Positions-Veränderung: <span style='font-weight: bold; color: {"#90c274" if avg_pos_change > 0 else "#d28063"};'>{avg_pos_change_sign}{format_num(avg_pos_change, 2)} Positionen</span> (Gesamt-SV: <span style='font-weight: bold;'>{format_num(total_sv)} SV</span>).</li>
     </ul>
     <h4 style='font-family: "Raleway", sans-serif; font-weight: 700; color: #232323; margin-top: 1rem; margin-bottom: 0.5rem;'>Haupttreiber der Ranking-Abstürze:</h4>
     <ul style='font-family: "Open Sans", sans-serif; color: #444444; line-height: 1.5; font-size: 0.95rem; padding-left: 1.2rem; margin-top: 0;'>
-    <li style='margin-bottom: 0.5rem;'><strong>Abstürze aus den Top 3:</strong> <span style='font-weight: bold;'>{format_num(top3_count)} Keywords</span> verloren Top-Positionen (Verlust: <span style='color: #993333; font-weight: bold;'>{top3_loss_only}</span>).</li>
-    <li style='margin-bottom: 0.5rem;'><strong>Abstürze aus den Top 10:</strong> Weitere <span style='font-weight: bold;'>{format_num(top10_count)} Keywords</span> fielen von Seite 1 (Verlust: <span style='color: #993333; font-weight: bold;'>{top10_loss_only}</span>).</li>
-    <li style='margin-bottom: 0.5rem;'><strong>Vollständige Ranking-Verluste:</strong> <span style='font-weight: bold;'>{format_num(total_loss_count)} Keywords</span> komplett aus den Top 100 herausgefallen (Verlust: <span style='color: #993333; font-weight: bold;'>{total_loss_loss_only}</span>).</li>
+    <li style='margin-bottom: 0.5rem;'><strong>Abstürze aus den Top 3:</strong> <span style='font-weight: bold;'>{format_num(top3_count)} Keywords</span> verloren Top-Positionen (Verlust: <span style='color: #d28063; font-weight: bold;'>{top3_loss_only}</span>).</li>
+    <li style='margin-bottom: 0.5rem;'><strong>Abstürze aus den Top 10:</strong> Weitere <span style='font-weight: bold;'>{format_num(top10_count)} Keywords</span> fielen von Seite 1 (Verlust: <span style='color: #d28063; font-weight: bold;'>{top10_loss_only}</span>).</li>
+    <li style='margin-bottom: 0.5rem;'><strong>Vollständige Ranking-Verluste:</strong> <span style='font-weight: bold;'>{format_num(total_loss_count)} Keywords</span> komplett aus den Top 100 herausgefallen (Verlust: <span style='color: #d28063; font-weight: bold;'>{total_loss_loss_only}</span>).</li>
     </ul>"""
                 story_title = "Executive Summary & Marketing-Story"
             else:
@@ -1512,14 +1660,14 @@ if uploaded_file is not None and st.session_state['analyzed']:
     <h4 style='font-family: "Raleway", sans-serif; font-weight: 700; color: #232323; margin-top: 1rem; margin-bottom: 0.5rem;'>Ranking Changes (Position Data):</h4>
     <ul style='font-family: "Open Sans", sans-serif; color: #444444; line-height: 1.5; font-size: 0.95rem; padding-left: 1.2rem; margin-top: 0;'>
     <li style='margin-bottom: 0.5rem;'><strong>Position Gains:</strong> <span style='font-weight: bold;'>{format_num(gained_keywords_count)} keywords</span> improved (avg. <span style='color: #90c274; font-weight: bold;'>+{format_num(avg_gain_pos, 1)} positions</span>, total SV: <span style='font-weight: bold;'>{format_num(gained_keywords_sv)} SV</span>).</li>
-    <li style='margin-bottom: 0.5rem;'><strong>Position Losses:</strong> <span style='font-weight: bold;'>{format_num(lost_keywords_count)} keywords</span> deteriorated (avg. <span style='color: #993333; font-weight: bold;'>-{format_num(avg_loss_pos, 1)} positions</span>, total SV: <span style='font-weight: bold;'>{format_num(lost_keywords_sv)} SV</span>).</li>
-    <li style='margin-bottom: 0.5rem;'><strong>Overall Trend:</strong> Avg. position change: <span style='font-weight: bold; color: {"#90c274" if avg_pos_change > 0 else "#993333"};'>{avg_pos_change_sign}{format_num(avg_pos_change, 2)} positions</span> (total SV: <span style='font-weight: bold;'>{format_num(total_sv)} SV</span>).</li>
+    <li style='margin-bottom: 0.5rem;'><strong>Position Losses:</strong> <span style='font-weight: bold;'>{format_num(lost_keywords_count)} keywords</span> deteriorated (avg. <span style='color: #d28063; font-weight: bold;'>-{format_num(avg_loss_pos, 1)} positions</span>, total SV: <span style='font-weight: bold;'>{format_num(lost_keywords_sv)} SV</span>).</li>
+    <li style='margin-bottom: 0.5rem;'><strong>Overall Trend:</strong> Avg. position change: <span style='font-weight: bold; color: {"#90c274" if avg_pos_change > 0 else "#d28063"};'>{avg_pos_change_sign}{format_num(avg_pos_change, 2)} positions</span> (total SV: <span style='font-weight: bold;'>{format_num(total_sv)} SV</span>).</li>
     </ul>
     <h4 style='font-family: "Raleway", sans-serif; font-weight: 700; color: #232323; margin-top: 1rem; margin-bottom: 0.5rem;'>Main Drivers of Ranking Drops:</h4>
     <ul style='font-family: "Open Sans", sans-serif; color: #444444; line-height: 1.5; font-size: 0.95rem; padding-left: 1.2rem; margin-top: 0;'>
-    <li style='margin-bottom: 0.5rem;'><strong>Drops from Top 3:</strong> <span style='font-weight: bold;'>{format_num(top3_count)} keywords</span> lost top positions (loss of <span style='color: #993333; font-weight: bold;'>{top3_loss_only}</span>).</li>
-    <li style='margin-bottom: 0.5rem;'><strong>Drops from Top 10:</strong> <span style='font-weight: bold;'>{format_num(top10_count)} keywords</span> fell off page 1 (loss of <span style='color: #993333; font-weight: bold;'>{top10_loss_only}</span>).</li>
-    <li style='margin-bottom: 0.5rem;'><strong>Complete Losses:</strong> <span style='font-weight: bold;'>{format_num(total_loss_count)} keywords</span> dropped out of the Top 100 (loss of <span style='color: #993333; font-weight: bold;'>{total_loss_loss_only}</span>).</li>
+    <li style='margin-bottom: 0.5rem;'><strong>Drops from Top 3:</strong> <span style='font-weight: bold;'>{format_num(top3_count)} keywords</span> lost top positions (loss of <span style='color: #d28063; font-weight: bold;'>{top3_loss_only}</span>).</li>
+    <li style='margin-bottom: 0.5rem;'><strong>Drops from Top 10:</strong> <span style='font-weight: bold;'>{format_num(top10_count)} keywords</span> fell off page 1 (loss of <span style='color: #d28063; font-weight: bold;'>{top10_loss_only}</span>).</li>
+    <li style='margin-bottom: 0.5rem;'><strong>Complete Losses:</strong> <span style='font-weight: bold;'>{format_num(total_loss_count)} keywords</span> dropped out of the Top 100 (loss of <span style='color: #d28063; font-weight: bold;'>{total_loss_loss_only}</span>).</li>
     </ul>
     <h4 style='font-family: "Raleway", sans-serif; font-weight: 700; color: #232323; margin-top: 1rem; margin-bottom: 0.5rem;'>Quick-Wins / Actionable Recommendations:</h4>
     <ul style='font-family: "Open Sans", sans-serif; color: #444444; line-height: 1.5; font-size: 0.95rem; padding-left: 1.2rem; margin-top: 0;'>
@@ -1608,7 +1756,7 @@ if uploaded_file is not None and st.session_state['analyzed']:
                         st.metric(t["kpi_worst_cluster"], worst_cluster['Cluster'], delta=worst_delta)
                     top_bottom = pd.concat([cluster_net.nlargest(3, 'Metric Change'), cluster_net.nsmallest(3, 'Metric Change')]).drop_duplicates().sort_values('Metric Change')
                     fig_net = px.bar(top_bottom, x='Metric Change', y='Cluster', orientation='h',
-                                     color='Metric Change', color_continuous_scale=[[0.0, '#993333'], [0.5, '#dfdfdf'], [1.0, '#90c274']], height=200)
+                                     color='Metric Change', color_continuous_scale=[[0.0, '#d28063'], [0.5, '#dfdfdf'], [1.0, '#90c274']], height=200)
                     style_plotly_fig(fig_net)
                     fig_net.update_layout(margin=dict(l=10, r=10, t=25, b=10))
                     st.plotly_chart(fig_net, use_container_width=True)
@@ -1660,6 +1808,8 @@ if uploaded_file is not None and st.session_state['analyzed']:
 
 
         with tab_d:
+            if st.session_state.get('print_mode', False):
+                st.markdown(f"<h2 class='print-page-break'>{t['tab_dir']}</h2>", unsafe_allow_html=True)
             st.subheader(t["dir_sub"])
             if not top10_drops.empty:
                 dir_vol = top10_drops.groupby('Directory').agg(
@@ -1686,6 +1836,8 @@ if uploaded_file is not None and st.session_state['analyzed']:
                 st.info(t["dir_empty"])
 
         with tab1:
+            if st.session_state.get('print_mode', False):
+                st.markdown(f"<h2 class='print-page-break'>{t['tab_cluster']}</h2>", unsafe_allow_html=True)
             st.subheader(t["cl_sub"])
             st.markdown(t["cl_desc"])
             if not losers.empty:
@@ -1712,8 +1864,13 @@ if uploaded_file is not None and st.session_state['analyzed']:
                 st.info(t["cl_empty"])
 
         with tab2:
+            if st.session_state.get('print_mode', False):
+                st.markdown(f"<h2 class='print-page-break'>{t['tab_drops']}</h2>", unsafe_allow_html=True)
             st.subheader(t["rd_sub"])
-            kw_filter = st.text_input(t["rd_filter"]).strip().lower()
+            if not st.session_state.get('print_mode', False):
+                kw_filter = st.text_input(t["rd_filter"]).strip().lower()
+            else:
+                kw_filter = ""
             f_top3 = top3_drops[top3_drops['Keyword'].astype(str).str.lower().str.contains(kw_filter, na=False)] if kw_filter else top3_drops
             f_top10 = top10_drops[top10_drops['Keyword'].astype(str).str.lower().str.contains(kw_filter, na=False)] if kw_filter else top10_drops
             f_page2 = page2_drops[page2_drops['Keyword'].astype(str).str.lower().str.contains(kw_filter, na=False)] if kw_filter else page2_drops
@@ -1774,6 +1931,8 @@ if uploaded_file is not None and st.session_state['analyzed']:
                 st.info(t["rd_100_empty"])
 
         with tab3:
+            if st.session_state.get('print_mode', False):
+                st.markdown(f"<h2 class='print-page-break'>{t['tab_lhf']}</h2>", unsafe_allow_html=True)
             st.subheader(t["lhf_sub"], anchor="low-hanging-fruits")
             st.markdown(t["lhf_desc_sistrix"])
             if not low_hanging.empty:
@@ -1789,7 +1948,7 @@ if uploaded_file is not None and st.session_state['analyzed']:
                     format_dict[c] = lambda x: "-" if pd.notnull(x) and x == 101 else (format_num(x, 2) if pd.notnull(x) else "")
                 loss_cols = [c for c in ['Traffic Loss', 'Lost Value €'] if c in lhf_df.columns]
                 if loss_cols:
-                    styler = styler.map(lambda x: 'color: #993333; font-weight: bold;' if pd.notnull(x) and x > 0 else '', subset=loss_cols)
+                    styler = styler.map(lambda x: 'color: #d28063; font-weight: bold;' if pd.notnull(x) and x > 0 else '', subset=loss_cols)
                     for c in loss_cols:
                         if c == 'Lost Value €':
                             if lang == "EN":
@@ -1798,30 +1957,35 @@ if uploaded_file is not None and st.session_state['analyzed']:
                                 format_dict[c] = lambda x: f"▼ -{format_num(x, 2)} €" if pd.notnull(x) and x > 0 else ("0,00 €" if pd.notnull(x) else "")
                         else:
                             format_dict[c] = lambda x: f"▼ -{format_num(x)}" if pd.notnull(x) and x > 0 else ("0" if pd.notnull(x) else "")
-                styler = styler.map(lambda x: 'color: #90c274; font-weight: bold;' if pd.notnull(x) and x > 0 else ('color: #993333; font-weight: bold;' if pd.notnull(x) and x < 0 else ''), subset=['Position Change'])
+                styler = styler.map(lambda x: 'color: #90c274; font-weight: bold;' if pd.notnull(x) and x > 0 else ('color: #d28063; font-weight: bold;' if pd.notnull(x) and x < 0 else ''), subset=['Position Change'])
                 format_dict['Position Change'] = lambda x: f"▲ +{format_num(abs(x), 2)}" if pd.notnull(x) and x > 0 else (f"▼ -{format_num(abs(x), 2)}" if pd.notnull(x) and x < 0 else format_num(0.0, 2))
                 styler = styler.format(format_dict)
-                st.dataframe(
-                    styler,
-                    column_config={
-                        "Potential Score": st.column_config.ProgressColumn(
-                            "Potential Score",
-                            help=t.get("lhf_pot_help", "Calculated potential (0-10)"),
-                            format="%.1f",
-                            min_value=0.0,
-                            max_value=10.0,
-                        ),
-                        "Difficulty": st.column_config.TextColumn(
-                            t.get("lhf_diff_label", "Difficulty"),
-                            help=t.get("lhf_diff_help", "Estimated difficulty")
-                        )
-                    },
-                    use_container_width=True
-                )
+                if st.session_state.get('print_mode', False):
+                    st.markdown(styler.to_html(), unsafe_allow_html=True)
+                else:
+                    st.dataframe(
+                        styler,
+                        column_config={
+                            "Potential Score": st.column_config.ProgressColumn(
+                                "Potential Score",
+                                help=t.get("lhf_pot_help", "Calculated potential (0-10)"),
+                                format="%.1f",
+                                min_value=0.0,
+                                max_value=10.0,
+                            ),
+                            "Difficulty": st.column_config.TextColumn(
+                                t.get("lhf_diff_label", "Difficulty"),
+                                help=t.get("lhf_diff_help", "Estimated difficulty")
+                            )
+                        },
+                        use_container_width=True
+                    )
             else:
                 st.info(t["lhf_empty"])
 
         with tab4:
+            if st.session_state.get('print_mode', False):
+                st.markdown(f"<h2 class='print-page-break'>{t['tab_winners']}</h2>", unsafe_allow_html=True)
             st.subheader(t["win_sub_sistrix"])
             if not winners.empty:
                 fig_win = px.scatter(winners, x="Search Volume", y="Position#2",
@@ -1836,45 +2000,46 @@ if uploaded_file is not None and st.session_state['analyzed']:
             else:
                 st.info(t["win_empty"])
 
-        with tab5:
-            st.subheader(t["ad_sub"])
-            f_col1, f_col2, f_col3, f_col4, f_col5 = st.columns(5)
-            all_clusters_sis = sorted([c for c in df['Cluster'].dropna().unique() if c != 'undefined']) + ['undefined']
-            with f_col1:
-                sel_clusters = st.multiselect(t["ad_filter_cluster"], options=all_clusters_sis)
-            with f_col2:
-                is_disabled = intent_skipped
-                all_intents_sis = set()
-                for val in df['Search Intent'].dropna().unique():
-                    for piece in val.split(', '):
-                        all_intents_sis.add(piece)
-                sel_intents = st.multiselect(t["ad_filter_intent"], options=sorted(list(all_intents_sis)), disabled=is_disabled)
-            all_changes_sis = sorted(df['Change'].unique().tolist())
-            with f_col3:
-                sel_changes = st.multiselect(t["ad_filter_change"], options=all_changes_sis)
-            all_dirs = sorted(df['Directory'].unique().tolist())
-            with f_col4:
-                sel_dirs = st.multiselect(t["ad_filter_dir"], options=all_dirs)
-            with f_col5:
-                search_kw = st.text_input(t["ad_filter_kw"]).strip().lower()
+        if not st.session_state.get('print_mode', False):
+            with tab5:
+                st.subheader(t["ad_sub"])
+                f_col1, f_col2, f_col3, f_col4, f_col5 = st.columns(5)
+                all_clusters_sis = sorted([c for c in df['Cluster'].dropna().unique() if c != 'undefined']) + ['undefined']
+                with f_col1:
+                    sel_clusters = st.multiselect(t["ad_filter_cluster"], options=all_clusters_sis)
+                with f_col2:
+                    is_disabled = intent_skipped
+                    all_intents_sis = set()
+                    for val in df['Search Intent'].dropna().unique():
+                        for piece in val.split(', '):
+                            all_intents_sis.add(piece)
+                    sel_intents = st.multiselect(t["ad_filter_intent"], options=sorted(list(all_intents_sis)), disabled=is_disabled)
+                all_changes_sis = sorted(df['Change'].unique().tolist())
+                with f_col3:
+                    sel_changes = st.multiselect(t["ad_filter_change"], options=all_changes_sis)
+                all_dirs = sorted(df['Directory'].unique().tolist())
+                with f_col4:
+                    sel_dirs = st.multiselect(t["ad_filter_dir"], options=all_dirs)
+                with f_col5:
+                    search_kw = st.text_input(t["ad_filter_kw"]).strip().lower()
 
-            all_cols_sis = ['Cluster', 'Search Intent', 'Directory', 'Keyword', 'Change', 'Position Change',
-                            'Traffic Change', 'Lost Value €', 'Position#1', 'Position#2', 'Search Volume',
-                            'Traffic#1', 'Traffic#2', 'URL']
-            all_cols_sis = [c for c in all_cols_sis if c in df.columns]
+                all_cols_sis = ['Cluster', 'Search Intent', 'Directory', 'Keyword', 'Change', 'Position Change',
+                                'Traffic Change', 'Lost Value €', 'Position#1', 'Position#2', 'Search Volume',
+                                'Traffic#1', 'Traffic#2', 'URL']
+                all_cols_sis = [c for c in all_cols_sis if c in df.columns]
 
-            filtered_df = df.copy()
-            if sel_clusters:
-                filtered_df = filtered_df[filtered_df['Cluster'].isin(sel_clusters)]
-            if sel_intents:
-                filtered_df = filtered_df[filtered_df['Search Intent'].apply(lambda x: any(c in x for c in sel_intents))]
-            if sel_changes:
-                filtered_df = filtered_df[filtered_df['Change'].isin(sel_changes)]
-            if sel_dirs:
-                filtered_df = filtered_df[filtered_df['Directory'].isin(sel_dirs)]
-            if search_kw:
-                filtered_df = filtered_df[filtered_df['Keyword'].astype(str).str.lower().str.contains(search_kw, na=False)]
-            display_styled_dataframe(filtered_df[all_cols_sis], sort_col='Position Change', ascending=True)
+                filtered_df = df.copy()
+                if sel_clusters:
+                    filtered_df = filtered_df[filtered_df['Cluster'].isin(sel_clusters)]
+                if sel_intents:
+                    filtered_df = filtered_df[filtered_df['Search Intent'].apply(lambda x: any(c in x for c in sel_intents))]
+                if sel_changes:
+                    filtered_df = filtered_df[filtered_df['Change'].isin(sel_changes)]
+                if sel_dirs:
+                    filtered_df = filtered_df[filtered_df['Directory'].isin(sel_dirs)]
+                if search_kw:
+                    filtered_df = filtered_df[filtered_df['Keyword'].astype(str).str.lower().str.contains(search_kw, na=False)]
+                display_styled_dataframe(filtered_df[all_cols_sis], sort_col='Position Change', ascending=True)
 
 else:
     info_key = f"info_upload_{mode_key}"
