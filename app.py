@@ -701,8 +701,19 @@ if st.session_state.get("print_mode", False):
                 st.session_state['print_mode'] = False
                 st.rerun()
 
-st.title(t[f"title_{mode_key}"])
-st.markdown(t[f"subtitle_{mode_key}"])
+# Render Title and Subtitle (with Logo in print mode)
+if st.session_state.get("print_mode", False):
+    col_hdr_title, col_hdr_logo = st.columns([7.5, 2.5])
+    with col_hdr_title:
+        st.title(t[f"title_{mode_key}"])
+        st.markdown(t[f"subtitle_{mode_key}"])
+    with col_hdr_logo:
+        st.markdown("<div style='text-align: right; padding-top: 1.5rem;' class='print-logo-container'>", unsafe_allow_html=True)
+        st.image("assets/logo-horizontal.png", use_container_width=True)
+        st.markdown("</div>", unsafe_allow_html=True)
+else:
+    st.title(t[f"title_{mode_key}"])
+    st.markdown(t[f"subtitle_{mode_key}"])
 
 # Show export button if analyzed and not in print mode
 if st.session_state.get('analyzed', False) and not st.session_state.get('print_mode', False):
