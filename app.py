@@ -246,7 +246,7 @@ translations = {
         "max_pdf_rows_help": "Limits the number of rows displayed in tables to keep the PDF report compact.",
         "pdf_truncated_note": "Showing top {limit} of {total} rows in PDF export.",
         # Footer / Legal
-        "footer": "MIT License &copy; 2026 Benjamin &quot;SEOux Indianer&quot; Wingerter | Created in Munich &amp; Bangkok with ❤️ | <a href='https://seouxindianer.de' target='_blank' style='color: #2ea3f2; text-decoration: underline;'>seouxindianer.de</a> | Co-developed with Antigravity 🤖",
+        "footer": "MIT License &copy; 2026 Benjamin &quot;SEOux Indianer&quot; Wingerter | Created in Munich &amp; Bangkok with ❤️ | <a href=\"https://seouxindianer.de\" target=\"_blank\" style=\"color: #2ea3f2; text-decoration: underline;\">seouxindianer.de</a> | Co-developed with Antigravity 🤖",
         "legal_header": "Legal & Privacy Policy",
         "imprint_body": """### Imprint
 
@@ -426,7 +426,7 @@ You have the right to access, rectify, erase, or restrict the processing of your
         "max_pdf_rows_help": "Begrenzt die Anzahl der Zeilen in den Tabellen, um den PDF-Bericht kompakt zu halten.",
         "pdf_truncated_note": "Es werden nur die Top {limit} von {total} Zeilen im PDF-Export angezeigt.",
         # Footer / Legal
-        "footer": "MIT License &copy; 2026 Benjamin &quot;SEOux Indianer&quot; Wingerter | Erstellt in München &amp; Bangkok mit ❤️ | <a href='https://seouxindianer.de' target='_blank' style='color: #2ea3f2; text-decoration: underline;'>seouxindianer.de</a> | Mitentwickelt von Antigravity 🤖",
+        "footer": "MIT License &copy; 2026 Benjamin &quot;SEOux Indianer&quot; Wingerter | Erstellt in München &amp; Bangkok mit ❤️ | <a href=\"https://seouxindianer.de\" target=\"_blank\" style=\"color: #2ea3f2; text-decoration: underline;\">seouxindianer.de</a> | Mitentwickelt von Antigravity 🤖",
         "legal_header": "Rechtliches / Impressum",
         "imprint_body": """### Impressum
 
