@@ -25,7 +25,7 @@ This tool does the heavy lifting for you:
 | **Dual Data Source Support** | Switch seamlessly between **Google Search Console** (real clicks & impressions) and **Sistrix** (search volume & CPC) depending on what data you want to analyze. |
 | **Ready-to-Paste Summaries** | Instantly writes a narrative executive summary of SEO performance (wins, page-1 drops, and low-hanging fruits) ready to paste directly into emails or slide decks. |
 | **Automatic Topic Clustering** | Automatically groups thousands of keywords into logical thematic clusters (by main search term) so you can see which product categories or topics lost the most visibility. |
-| **Search Intent Detection** | Classifies search terms as `KNOW` (informational), `DO` (transactional), `regional:CITY`, or `regional:COUNTRY` (for DE & EN data) to analyze if you lost transactional or informational traffic. |
+| **Search Intent Detection** | Classifies search terms as `KNOW` (informational), `DO` (transactional), `regional:CITY`, or `regional:COUNTRY` (supports DE, EN, ES, FR, IT, NL, CS, RU, PT, HR, LA, and Klingon!) to analyze if you lost transactional or informational traffic. |
 | **Low-Hanging Fruits Finder** | Instantly surfaces keywords ranking on page 2 (positions 11–15) with high impressions or search volume. These are your fastest opportunities for quick traffic gains. |
 | **AdWords Traffic Value (Sistrix)** | Translates organic traffic losses into concrete monetary value (using CPC data), showing you exactly how much it would cost to buy back that lost traffic with Google Ads. |
 | **Directory Performance (Sistrix)** | Groups ranking drops by URL directory (e.g. `/blog/` vs. `/shop/`) to identify which sections of your site took the biggest hits. |
