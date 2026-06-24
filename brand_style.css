@@ -230,11 +230,7 @@ section[data-testid="stSidebar"] .stButton > button[kind="secondary"] {
 /* --- MindBlow Media Design System: Input Fields (Gray Box Variant) --- */
 
 /* 1. Style the containers to be grey and rounded */
-[data-testid="stTextInput"] > div > div,
-[data-testid="stTextInput"] div[data-baseweb="base-input"],
 [data-testid="stTextInput"] div[data-baseweb="input"],
-.stTextInput > div > div,
-.stTextInput div[data-baseweb="base-input"],
 .stTextInput div[data-baseweb="input"],
 
 [data-testid="stSelectbox"] div[data-baseweb="select"] > div,
@@ -242,18 +238,12 @@ section[data-testid="stSidebar"] .stButton > button[kind="secondary"] {
 .stSelectbox div[data-baseweb="select"] > div,
 .stSelectbox [data-baseweb="select"],
 
-[data-testid="stTextArea"] > div > div,
-[data-testid="stTextArea"] div[data-baseweb="base-input"],
 [data-testid="stTextArea"] div[data-baseweb="textarea"],
-.stTextArea > div > div,
-.stTextArea div[data-baseweb="base-input"],
+[data-testid="stTextArea"] div[data-baseweb="base-input"],
 .stTextArea div[data-baseweb="textarea"],
+.stTextArea div[data-baseweb="base-input"],
 
-[data-testid="stDateInput"] > div > div,
-[data-testid="stDateInput"] div[data-baseweb="base-input"],
 [data-testid="stDateInput"] div[data-baseweb="input"],
-.stDateInput > div > div,
-.stDateInput div[data-baseweb="base-input"],
 .stDateInput div[data-baseweb="input"] {
     background-color: #f0f2f6 !important;
     border: 1px solid transparent !important;
@@ -276,11 +266,7 @@ section[data-testid="stSidebar"] .stButton > button[kind="secondary"] {
 }
 
 /* 3. Hover state for containers */
-[data-testid="stTextInput"] > div > div:hover,
-[data-testid="stTextInput"] div[data-baseweb="base-input"]:hover,
 [data-testid="stTextInput"] div[data-baseweb="input"]:hover,
-.stTextInput > div > div:hover,
-.stTextInput div[data-baseweb="base-input"]:hover,
 .stTextInput div[data-baseweb="input"]:hover,
 
 [data-testid="stSelectbox"] div[data-baseweb="select"] > div:hover,
@@ -288,28 +274,18 @@ section[data-testid="stSidebar"] .stButton > button[kind="secondary"] {
 .stSelectbox div[data-baseweb="select"] > div:hover,
 .stSelectbox [data-baseweb="select"]:hover,
 
-[data-testid="stTextArea"] > div > div:hover,
-[data-testid="stTextArea"] div[data-baseweb="base-input"]:hover,
 [data-testid="stTextArea"] div[data-baseweb="textarea"]:hover,
-.stTextArea > div > div:hover,
-.stTextArea div[data-baseweb="base-input"]:hover,
+[data-testid="stTextArea"] div[data-baseweb="base-input"]:hover,
 .stTextArea div[data-baseweb="textarea"]:hover,
+.stTextArea div[data-baseweb="base-input"]:hover,
 
-[data-testid="stDateInput"] > div > div:hover,
-[data-testid="stDateInput"] div[data-baseweb="base-input"]:hover,
 [data-testid="stDateInput"] div[data-baseweb="input"]:hover,
-.stDateInput > div > div:hover,
-.stDateInput div[data-baseweb="base-input"]:hover,
 .stDateInput div[data-baseweb="input"]:hover {
     border-color: #993333 !important;
 }
 
 /* 4. Focus-within state for containers */
-[data-testid="stTextInput"] > div > div:focus-within,
-[data-testid="stTextInput"] div[data-baseweb="base-input"]:focus-within,
 [data-testid="stTextInput"] div[data-baseweb="input"]:focus-within,
-.stTextInput > div > div:focus-within,
-.stTextInput div[data-baseweb="base-input"]:focus-within,
 .stTextInput div[data-baseweb="input"]:focus-within,
 
 [data-testid="stSelectbox"] div[data-baseweb="select"] > div:focus-within,
@@ -317,18 +293,12 @@ section[data-testid="stSidebar"] .stButton > button[kind="secondary"] {
 .stSelectbox div[data-baseweb="select"] > div:focus-within,
 .stSelectbox [data-baseweb="select"]:focus-within,
 
-[data-testid="stTextArea"] > div > div:focus-within,
-[data-testid="stTextArea"] div[data-baseweb="base-input"]:focus-within,
 [data-testid="stTextArea"] div[data-baseweb="textarea"]:focus-within,
-.stTextArea > div > div:focus-within,
-.stTextArea div[data-baseweb="base-input"]:focus-within,
+[data-testid="stTextArea"] div[data-baseweb="base-input"]:focus-within,
 .stTextArea div[data-baseweb="textarea"]:focus-within,
+.stTextArea div[data-baseweb="base-input"]:focus-within,
 
-[data-testid="stDateInput"] > div > div:focus-within,
-[data-testid="stDateInput"] div[data-baseweb="base-input"]:focus-within,
 [data-testid="stDateInput"] div[data-baseweb="input"]:focus-within,
-.stDateInput > div > div:focus-within,
-.stDateInput div[data-baseweb="base-input"]:focus-within,
 .stDateInput div[data-baseweb="input"]:focus-within {
     border-color: #993333 !important;
     box-shadow: 0 0 0 3px rgba(153, 51, 51, 0.25) !important;
