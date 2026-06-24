@@ -126,7 +126,7 @@ translations = {
         "brand_help": "Keywords containing these terms will be grouped into a 'Brand' cluster.",
         "cluster_count": "Number of Topic Clusters",
         "data_lang": "Data Language (for Search Intent)",
-        "data_lang_options": ["Deutsch", "English", "Español", "Français", "Italiano", "Nederlands", "Čeština", "Русский", "Other"],
+        "data_lang_options": ["Deutsch", "English", "Español", "Français", "Italiano", "Nederlands", "Čeština", "Русский", "Português", "Hrvatski", "Latine", "tlhIngan Hol (Klingon)", "Other"],
         "data_lang_help": "Select the language of your keyword data to correctly determine search intent (KNOW, DO, regional).",
         "btn_analyze": "Analyze",
         "err_format_gsc": "Could not recognize the GSC format. Please upload a standard Queries.csv from a GSC date comparison (exactly 9 columns expected).",
@@ -306,7 +306,7 @@ You have the right to access, rectify, erase, or restrict the processing of your
         "brand_help": "Keywords, die diese Begriffe enthalten, werden in einem eigenen 'Brand' Cluster gesammelt.",
         "cluster_count": "Anzahl der Themen-Cluster",
         "data_lang": "Daten-Sprache (für Suchintent)",
-        "data_lang_options": ["Deutsch", "English", "Español", "Français", "Italiano", "Nederlands", "Čeština", "Русский", "Andere"],
+        "data_lang_options": ["Deutsch", "English", "Español", "Français", "Italiano", "Nederlands", "Čeština", "Русский", "Português", "Hrvatski", "Latine", "tlhIngan Hol (Klingon)", "Andere"],
         "data_lang_help": "Wähle die Sprache deiner Keyword-Daten, um den Suchintent korrekt zu bestimmen.",
         "btn_analyze": "Analysieren",
         "err_format_gsc": "Das GSC-Format konnte nicht erkannt werden. Bitte lade eine standardmäßige Queries.csv aus einem GSC-Zeitraumvergleich hoch (genau 9 Spalten erwartet).",
@@ -611,6 +611,46 @@ def get_intent(kw, lang_choice):
         if re.search(r'(^|\s)(москва|петербург|спб|новосибирск|екатеринбург|казань|новгород|челябинск|самара|омск|ростов)($|\s)', kw_lower):
             intents.append("regional:CITY")
         if re.search(r'(^|\s)(россия|рф|беларусь|белоруссия|казахстан)($|\s)', kw_lower):
+            intents.append("regional:COUNTRY")
+
+    elif lang_choice == supported_options[8]:  # Português
+        if re.search(r'\b(quem|o\s+que|oque|onde|quando|por\s+que|porque|como|qual|quais|de\s+quem|guia|tutorial|dicas|definicao|definição|explicar|manual|exemplo|exemplos|aprender|curso|ajuda|faq|forum)\b', kw_lower):
+            intents.append("KNOW")
+        if re.search(r'\b(comprar|encomendar|barato|baratos|cupom|cupons|desconto|descontos|baixar|download|gratis|grátis|gratuito|loja|preço|preços|preco|precos|oferta|ofertas|venda|alugar|aluguer|reserva|reservar)\b', kw_lower):
+            intents.append("DO (Transactional)")
+        if re.search(r'\b(lisboa|porto|braga|coimbra|funchal|faro|aveiro|évora|evora|leiria|viseu|rio\s+de\s+janeiro|são\s+paulo|sao\s+paulo)\b', kw_lower):
+            intents.append("regional:CITY")
+        if re.search(r'\b(portugal|brasil|angola|moçambique|mocambique|cabo\s+verde)\b', kw_lower):
+            intents.append("regional:COUNTRY")
+
+    elif lang_choice == supported_options[9]:  # Hrvatski
+        if re.search(r'\b(tko|što|sto|gdje|kada|zašto|zasto|kako|koji|čiji|ciji|vodič|vodic|priručnik|prirucnik|tipovi|definicija|objašnjenje|objasnjenje|forum|primjer|primjeri|naučiti|nauciti|tečaj|tecaj|pomoć|pomoc|faq)\b', kw_lower):
+            intents.append("KNOW")
+        if re.search(r'\b(kupiti|naručiti|naruciti|jeftino|jeftin|kupon|popust|popusti|preuzimanje|preuzeti|besplatno|besplatan|trgovina|e-trgovina|etrgovina|cijena|cijene|prodaja|najam|rezervirati|rezervacija)\b', kw_lower):
+            intents.append("DO (Transactional)")
+        if re.search(r'\b(zagreb|split|rijeka|osijek|zadar|brod|pula|karlovac|sisak|šibenik|sibenik|dubrovnik)\b', kw_lower):
+            intents.append("regional:CITY")
+        if re.search(r'\b(hrvatska|bosna|hercegovina|srbija|crna\s+gora|slovenija)\b', kw_lower):
+            intents.append("regional:COUNTRY")
+
+    elif lang_choice == supported_options[10]:  # Latine
+        if re.search(r'\b(quis|quid|ubi|quando|cur|quomodo|qui|quae|quod|cuius|regula|explicatio|definitio|exemplum|exempla|discere|auxilium|forum|faq)\b', kw_lower):
+            intents.append("KNOW")
+        if re.search(r'\b(emere|comparare|vilis|vile|donum|gratis|gratuitus|taberna|pretium|pretia|vendere|locare|reservare)\b', kw_lower):
+            intents.append("DO (Transactional)")
+        if re.search(r'\b(roma|lutheria|constantinopolis|mediolanum|neapolis|florentia|venetiae|athenae|hierosolyma|alexandria)\b', kw_lower):
+            intents.append("regional:CITY")
+        if re.search(r'\b(italia|gallia|hispania|germania|britannia|graecia|aegyptus)\b', kw_lower):
+            intents.append("regional:COUNTRY")
+
+    elif lang_choice == supported_options[11]:  # Klingon
+        if re.search(r"(\b|^)('Iv|nuq|nuqDaq|ghorgh|qatlh|chay'|mIgh|gholl|tutorial|faq|forum|ghoj|boQ)(\b|$)", kw_lower):
+            intents.append("KNOW")
+        if re.search(r"(\b|^)(je'|cheap|coupon|download|gratis|Huch|nej|lura'|lo')(\b|$)", kw_lower):
+            intents.append("DO (Transactional)")
+        if re.search(r"(\b|^)(Qo'noS|City|K'il'les|Vey|K't'inga)(\b|$)", kw_lower):
+            intents.append("regional:CITY")
+        if re.search(r"(\b|^)(Empire|Praxis|Penthe)(\b|$)", kw_lower):
             intents.append("regional:COUNTRY")
 
     else:
