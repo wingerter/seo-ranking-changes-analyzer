@@ -46,6 +46,12 @@ st.markdown("""
 section[data-testid="stSidebar"] > div:first-child {
     padding-top: 1rem !important;
 }
+[data-testid="stSidebarContent"] {
+    padding-top: 1.5rem !important;
+}
+[data-testid="stSidebarUserContent"] {
+    padding-top: 1.5rem !important;
+}
 /* Remove all margin/padding from sidebar image block */
 section[data-testid="stSidebar"] [data-testid="stImage"] {
     margin-bottom: 0 !important;
