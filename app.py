@@ -19,6 +19,16 @@ st.set_page_config(
     layout="wide"
 )
 
+# Initialize session state variables early
+if 'analyzed' not in st.session_state:
+    st.session_state['analyzed'] = False
+if 'print_mode' not in st.session_state:
+    st.session_state['print_mode'] = False
+
+# Reset print mode if not analyzed to prevent rendering print preview of empty setup screen
+if not st.session_state['analyzed']:
+    st.session_state['print_mode'] = False
+
 # --- Load Brand Styles ---
 try:
     with open("brand_style.css", "r", encoding="utf-8") as f:
@@ -72,7 +82,7 @@ section[data-testid="stSidebar"] hr {
 """, unsafe_allow_html=True)
 
 # Sidebar: compact language toggle only (logo moves to bottom)
-lang_choice = st.sidebar.radio("Language / Sprache", options=["DE", "EN"], index=0, horizontal=True)
+lang_choice = st.sidebar.radio("Language / Sprache", options=["DE", "EN"], index=0, horizontal=True, key="app_language_choice")
 lang = "DE" if "DE" in lang_choice else "EN"
 
 st.sidebar.markdown("---")
@@ -83,7 +93,7 @@ mode_options_en = ["Google Search Console (Queries.csv)", "Sistrix (Keyword Comp
 mode_options = mode_options_de if lang == "DE" else mode_options_en
 
 mode_label = "Datenquelle / Analysemodus" if lang == "DE" else "Data Source / Analysis Mode"
-mode = st.sidebar.selectbox(mode_label, options=mode_options, index=0)
+mode = st.sidebar.selectbox(mode_label, options=mode_options, index=0, key="app_analysis_mode")
 mode_key = "gsc" if "Google" in mode else "sistrix"
 
 # =============================================================================
@@ -231,6 +241,10 @@ translations = {
         "btn_save_pdf": "📄 Save PDF",
         "btn_back_dashboard": "◀ Back to Dashboard",
         "pdf_generating": "Generating PDF...",
+        "pdf_settings_header": "2. PDF Export Settings",
+        "max_pdf_rows_label": "Max. rows per table in PDF",
+        "max_pdf_rows_help": "Limits the number of rows displayed in tables to keep the PDF report compact.",
+        "pdf_truncated_note": "Showing top {limit} of {total} rows in PDF export.",
         # Footer / Legal
         "footer": "MIT License &copy; 2026 Benjamin &quot;SEOux Indianer&quot; Wingerter | Created in Munich &amp; Bangkok with ❤️ | <a href='https://seouxindianer.de' target='_blank' style='color: #2ea3f2; text-decoration: underline;'>seouxindianer.de</a> | Co-developed with Antigravity 🤖",
         "legal_header": "Legal & Privacy Policy",
@@ -407,6 +421,10 @@ You have the right to access, rectify, erase, or restrict the processing of your
         "btn_save_pdf": "📄 PDF speichern",
         "btn_back_dashboard": "◀ Zurück zum Dashboard",
         "pdf_generating": "PDF wird generiert...",
+        "pdf_settings_header": "2. PDF Export-Einstellungen",
+        "max_pdf_rows_label": "Max. Zeilen pro Tabelle im PDF",
+        "max_pdf_rows_help": "Begrenzt die Anzahl der Zeilen in den Tabellen, um den PDF-Bericht kompakt zu halten.",
+        "pdf_truncated_note": "Es werden nur die Top {limit} von {total} Zeilen im PDF-Export angezeigt.",
         # Footer / Legal
         "footer": "MIT License &copy; 2026 Benjamin &quot;SEOux Indianer&quot; Wingerter | Erstellt in München &amp; Bangkok mit ❤️ | <a href='https://seouxindianer.de' target='_blank' style='color: #2ea3f2; text-decoration: underline;'>seouxindianer.de</a> | Mitentwickelt von Antigravity 🤖",
         "legal_header": "Rechtliches / Impressum",
@@ -569,7 +587,11 @@ def display_styled_dataframe(df_to_show, sort_col, ascending=False):
     loss_cols = [c for c in ['Traffic Loss', 'Lost Value €', 'Clicks Loss'] if c in df_to_show.columns]
     gain_cols = [c for c in ['Traffic Gain', 'Clicks Gain'] if c in df_to_show.columns]
 
-    styler = df_to_show.sort_values(sort_col, ascending=ascending).style
+    df_sorted = df_to_show.sort_values(sort_col, ascending=ascending)
+    if st.session_state.get('print_mode', False):
+        limit = st.session_state.get('max_pdf_rows', 50)
+        df_sorted = df_sorted.head(limit)
+    styler = df_sorted.style
     format_dict = {}
 
     if loss_cols:
@@ -612,6 +634,9 @@ def display_styled_dataframe(df_to_show, sort_col, ascending=False):
     styler = styler.format(format_dict)
     if st.session_state.get('print_mode', False):
         st.markdown(styler.to_html(), unsafe_allow_html=True)
+        limit = st.session_state.get('max_pdf_rows', 50)
+        if len(df_to_show) > limit:
+            st.markdown(f"<div style='font-size:0.85em; color:#797979; margin-top:5px;'><i>* {t['pdf_truncated_note'].format(limit=limit, total=len(df_to_show))}</i></div>", unsafe_allow_html=True)
     else:
         st.dataframe(styler, use_container_width=True)
 
@@ -623,9 +648,6 @@ def display_styled_dataframe(df_to_show, sort_col, ascending=False):
 if st.session_state.get("print_mode", False):
     st.markdown("""
         <style>
-            [data-testid="stSidebar"] {
-                display: none !important;
-            }
             [data-testid="stHeader"] {
                 display: none !important;
             }
@@ -645,37 +667,9 @@ if st.session_state.get("print_mode", False):
             st.write(t["print_mode_desc"])
         with col_save:
             html_code = f"""
-            <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
             <script>
             function savePDF() {{
-                const btn = document.getElementById("pdf-btn");
-                btn.innerHTML = "{t['pdf_generating']}";
-                btn.disabled = true;
-                
-                const element = window.parent.document.querySelector('[data-testid="stAppViewContainer"]');
-                
-                const opt = {{
-                    margin:       [12, 12, 12, 12],
-                    filename:     'seo_ranking_report.pdf',
-                    image:        {{ type: 'jpeg', quality: 0.98 }},
-                    html2canvas:  {{ 
-                        scale: 1.5, 
-                        useCORS: true, 
-                        logging: false,
-                        letterRendering: true
-                    }},
-                    jsPDF:        {{ unit: 'mm', format: 'a4', orientation: 'portrait' }},
-                    pagebreak:    {{ mode: ['avoid-all', 'css', 'legacy'] }}
-                }};
-                
-                html2pdf().set(opt).from(element).save().then(() => {{
-                    btn.innerHTML = "{t['btn_save_pdf']}";
-                    btn.disabled = false;
-                }}).catch(err => {{
-                    console.error("PDF generation failed:", err);
-                    btn.innerHTML = "Error! Try again";
-                    btn.disabled = false;
-                }});
+                window.parent.print();
             }}
             </script>
             <button id="pdf-btn" onclick="savePDF()" style="
@@ -791,21 +785,24 @@ def on_file_upload():
     st.session_state['show_success_alert'] = False
 
 upload_label = t[f"upload_label_{mode_key}"]
-uploaded_file = st.sidebar.file_uploader(upload_label, type=["csv"], on_change=on_file_upload)
+uploaded_file = st.sidebar.file_uploader(upload_label, type=["csv"], key=f"uploader_{mode_key}", on_change=on_file_upload)
 
 # Date inputs — Sistrix mode only
 if mode_key == "sistrix":
     st.sidebar.subheader(t["dates_header"])
-    date_old = st.sidebar.date_input(t["date_old"], value=pd.to_datetime('today') - pd.DateOffset(months=1))
-    date_new = st.sidebar.date_input(t["date_new"], value=pd.to_datetime('today'))
+    date_old = st.sidebar.date_input(t["date_old"], value=pd.to_datetime('today') - pd.DateOffset(months=1), key="sistrix_date_old")
+    date_new = st.sidebar.date_input(t["date_new"], value=pd.to_datetime('today'), key="sistrix_date_new")
 
 st.sidebar.subheader(t["cluster_settings"])
-brand_input = st.sidebar.text_input(t["brand_input"], value="", help=t["brand_help"])
-num_clusters = st.sidebar.slider(t["cluster_count"], min_value=5, max_value=50, value=20, step=5)
-data_lang_choice = st.sidebar.selectbox(t["data_lang"], options=t["data_lang_options"], index=0, help=t["data_lang_help"])
+brand_input = st.sidebar.text_input(t["brand_input"], value="", help=t["brand_help"], key=f"brand_input_{mode_key}")
+num_clusters = st.sidebar.slider(t["cluster_count"], min_value=5, max_value=50, value=20, step=5, key=f"num_clusters_{mode_key}")
+data_lang_choice = st.sidebar.selectbox(t["data_lang"], options=t["data_lang_options"], index=0, help=t["data_lang_help"], key=f"data_lang_{mode_key}")
+
+st.sidebar.subheader(t["pdf_settings_header"])
+max_pdf_rows = st.sidebar.slider(t["max_pdf_rows_label"], min_value=10, max_value=200, value=50, step=10, help=t["max_pdf_rows_help"], key="max_pdf_rows")
 
 if uploaded_file is not None:
-    st.sidebar.button(t["btn_analyze"], type="primary", on_click=trigger_analysis)
+    st.sidebar.button(t["btn_analyze"], type="primary", on_click=trigger_analysis, key="btn_analyze_data")
 
 # Sidebar — Logo (full width) + Legal
 st.sidebar.markdown("---")
@@ -820,63 +817,74 @@ with st.sidebar.expander(t["legal_header"]):
 # =============================================================================
 pct_sign = " %" if lang == "DE" else "%"
 
-if uploaded_file is not None and st.session_state['analyzed']:
+# Check if we have an uploaded file or a cached backup dataframe
+has_data = uploaded_file is not None or (st.session_state.get('df_backup') is not None and st.session_state.get('mode_backup') == mode_key)
+
+if has_data and st.session_state['analyzed']:
 
     # =========================================================================
     # PARSING — branched by mode
     # =========================================================================
     try:
-        content = uploaded_file.getvalue()
         df = None
+        if uploaded_file is not None:
+            content = uploaded_file.getvalue()
 
-        if mode_key == "gsc":
-            # GSC: detect 9-column CSV
-            for enc in ['utf-8', 'utf-16', 'latin1', 'utf-8-sig']:
-                for sep in [',', ';', '\t']:
-                    try:
-                        temp_df = pd.read_csv(io.BytesIO(content), encoding=enc, sep=sep)
-                        if len(temp_df.columns) == 9:
-                            df = temp_df
-                            break
-                    except Exception:
-                        continue
-                if df is not None:
-                    break
-            if df is None:
-                raise Exception(t["err_format_gsc"])
-            df.columns = [
-                "Keyword",
-                "Clicks_New", "Clicks_Old",
-                "Impressions_New", "Impressions_Old",
-                "CTR_New", "CTR_Old",
-                "Position_New", "Position_Old"
-            ]
-
-        elif mode_key == "sistrix":
-            # Sistrix: detect Keyword + Position#1 columns
-            for enc in ['utf-8', 'utf-16', 'latin1', 'utf-8-sig']:
-                for sep in ['\t', ';', ',']:
-                    for skip in [0, 1, 2, 3, 4, 5]:
+            if mode_key == "gsc":
+                # GSC: detect 9-column CSV
+                for enc in ['utf-8', 'utf-16', 'latin1', 'utf-8-sig']:
+                    for sep in [',', ';', '\t']:
                         try:
-                            temp_df = pd.read_csv(io.BytesIO(content), encoding=enc, sep=sep, skiprows=skip, on_bad_lines='skip')
-                            temp_df.columns = [str(c).strip().strip('"').strip("'") for c in temp_df.columns]
-                            if 'Keyword' in temp_df.columns and 'Position#1' in temp_df.columns:
+                            temp_df = pd.read_csv(io.BytesIO(content), encoding=enc, sep=sep)
+                            if len(temp_df.columns) == 9:
                                 df = temp_df
                                 break
                         except Exception:
                             continue
                     if df is not None:
                         break
-                if df is not None:
-                    break
-            if df is None:
-                raise Exception(t["err_format_sistrix"])
+                if df is None:
+                    raise Exception(t["err_format_gsc"])
+                df.columns = [
+                    "Keyword",
+                    "Clicks_New", "Clicks_Old",
+                    "Impressions_New", "Impressions_Old",
+                    "CTR_New", "CTR_Old",
+                    "Position_New", "Position_Old"
+                ]
 
-            req_cols = ["Keyword", "Position#1", "Position#2", "Search Volume", "URL"]
-            missing_cols = [col for col in req_cols if col not in df.columns]
-            if missing_cols:
-                st.error(f"{t['err_req']} {missing_cols}")
-                st.stop()
+            elif mode_key == "sistrix":
+                # Sistrix: detect Keyword + Position#1 columns
+                for enc in ['utf-8', 'utf-16', 'latin1', 'utf-8-sig']:
+                    for sep in ['\t', ';', ',']:
+                        for skip in [0, 1, 2, 3, 4, 5]:
+                            try:
+                                temp_df = pd.read_csv(io.BytesIO(content), encoding=enc, sep=sep, skiprows=skip, on_bad_lines='skip')
+                                temp_df.columns = [str(c).strip().strip('"').strip("'") for c in temp_df.columns]
+                                if 'Keyword' in temp_df.columns and 'Position#1' in temp_df.columns:
+                                    df = temp_df
+                                    break
+                            except Exception:
+                                continue
+                        if df is not None:
+                            break
+                    if df is not None:
+                        break
+                if df is None:
+                    raise Exception(t["err_format_sistrix"])
+
+                req_cols = ["Keyword", "Position#1", "Position#2", "Search Volume", "URL"]
+                missing_cols = [col for col in req_cols if col not in df.columns]
+                if missing_cols:
+                    st.error(f"{t['err_req']} {missing_cols}")
+                    st.stop()
+
+            # Store backup in session state
+            st.session_state['df_backup'] = df.copy() if df is not None else None
+            st.session_state['mode_backup'] = mode_key
+        else:
+            # Restore from backup
+            df = st.session_state['df_backup'].copy()
 
     except Exception as e:
         st.error(f"{t['err_read']}{e}")

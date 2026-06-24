@@ -224,12 +224,26 @@ section[data-testid="stSidebar"] .stButton > button[kind="secondary"] {
 }
 
 /* Input Fields & Selection outline */
-.stTextInput input, .stSelectbox select, .stSlider [data-testid="stSlider"] {
+[data-testid="stTextInput"] div[data-baseweb="input"],
+[data-testid="stSelectbox"] div[data-baseweb="select"],
+[data-testid="stTextArea"] div[data-baseweb="textarea"],
+.stTextInput input, .stSelectbox select {
+    border: 1px solid #d2d2d2 !important;
     border-radius: 8px !important;
+    background-color: #ffffff !important;
+    transition: all 120ms ease !important;
 }
-.stTextInput input:focus, .stSelectbox select:focus {
+
+/* Hover & Focus state */
+[data-testid="stTextInput"] div[data-baseweb="input"]:focus-within,
+[data-testid="stSelectbox"] div[data-baseweb="select"]:focus-within,
+[data-testid="stTextArea"] div[data-baseweb="textarea"]:focus-within {
     border-color: #993333 !important;
     box-shadow: 0 0 0 3px rgba(153, 51, 51, 0.25) !important;
+}
+
+.stSlider [data-testid="stSlider"] {
+    border-radius: 8px !important;
 }
 
 /* ============================================================
