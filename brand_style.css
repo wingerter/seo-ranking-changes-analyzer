@@ -227,20 +227,30 @@ section[data-testid="stSidebar"] .stButton > button[kind="secondary"] {
     width: 100% !important;
 }
 
-/* Input Fields & Selection outline */
+/* --- MindBlow Media Design System: Input Fields (Box Variant) --- */
 [data-testid="stTextInput"] div[data-baseweb="input"],
-[data-testid="stSelectbox"] div[data-baseweb="select"] > div {
-    background-color: #f0f2f6 !important;
-    border: 1px solid transparent !important;
+[data-testid="stSelectbox"] div[data-baseweb="select"] > div,
+[data-testid="stTextArea"] div[data-baseweb="textarea"] {
+    background-color: #ffffff !important;
+    border: 1px solid #d2d2d2 !important;
     border-radius: 8px !important;
     box-shadow: none !important;
-    transition: all 120ms ease !important;
+    transition: border-color 120ms ease, box-shadow 120ms ease !important;
 }
 
-[data-testid="stTextInput"] div[data-baseweb="input"]:focus-within,
-[data-testid="stSelectbox"] div[data-baseweb="select"] > div:focus-within {
+/* Hover state */
+[data-testid="stTextInput"] div[data-baseweb="input"]:hover,
+[data-testid="stSelectbox"] div[data-baseweb="select"] > div:hover,
+[data-testid="stTextArea"] div[data-baseweb="textarea"]:hover {
     border-color: #993333 !important;
-    box-shadow: 0 0 0 3px rgba(153, 51, 51, 0.2) !important;
+}
+
+/* Focus state */
+[data-testid="stTextInput"] div[data-baseweb="input"]:focus-within,
+[data-testid="stSelectbox"] div[data-baseweb="select"] > div:focus-within,
+[data-testid="stTextArea"] div[data-baseweb="textarea"]:focus-within {
+    border-color: #993333 !important;
+    box-shadow: 0 0 0 3px rgba(153, 51, 51, 0.25) !important;
 }
 
 .stSlider [data-testid="stSlider"] {
