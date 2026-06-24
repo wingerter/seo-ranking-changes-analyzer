@@ -1,132 +1,104 @@
 # SEO Ranking Changes Analyzer
 
-> **Analyze SEO ranking shifts fast — powered by Google Search Console or Sistrix data, no API costs, 100% private.**
+> **Stop wasting hours in Excel. Instantly analyze ranking drops, group keywords by topic, and identify high-value search intent shifts from Google Search Console or Sistrix exports — 100% private and free.**
 
 [![MIT License](https://img.shields.io/badge/License-MIT-red.svg)](LICENSE)
-[![Python 3.11+](https://img.shields.io/badge/Python-3.11%2B-blue.svg)](https://python.org)
 [![Streamlit](https://img.shields.io/badge/Built%20with-Streamlit-ff4b4b.svg)](https://streamlit.io)
 
 ---
 
-## What it does
+## Why use this Analyzer?
 
-The **SEO Ranking Changes Analyzer** is a bilingual (🇩🇪/🇬🇧) Streamlit dashboard that turns raw CSV exports into actionable insights about keyword ranking changes. It supports two data sources — Google Search Console and Sistrix — switchable in the sidebar at any time.
+Analyzing weekly or monthly ranking shifts across thousands of keywords is tedious. Standard tools give you flat lists, and spreadsheets require manual filtering, VLOOKUPs, and pivot tables.
 
-Everything is processed **locally in RAM only**. No data is ever stored, sent to an external API, or persisted to disk. Upload your file, analyze, done.
+This tool does the heavy lifting for you:
+*   **Save hours of reporting time:** It auto-generates a ready-to-paste executive summary (in German or English) highlighting key wins, critical losses, and quick wins for your client reports.
+*   **Zero API costs & no limits:** Analyze massive exports in milliseconds without paying for external credits or API tokens.
+*   **100% Data Privacy:** Your client data is safe. All processing happens locally in transient server RAM. Files are never stored on disk, saved to a database, or sent to third-party APIs.
 
 ---
 
-## ✨ Features
+## ✨ Features for SEOs
 
-| Feature | Description |
+| Feature | What it does for you |
 |---|---|
-| **Dual analysis mode** | Switch between **Google Search Console** (real clicks & impressions) and **Sistrix** (search volume + CTR model) in one click |
-| **Executive Summary** | Auto-generated narrative summary of wins, losses & quick wins — ready to paste into your client report |
-| **Topic Clustering** | NLP-based keyword clustering by head terms — no API, no cost, milliseconds |
-| **Search Intent Detection** | Classifies keywords as `KNOW`, `DO (Transactional)`, `regional:CITY`, `regional:COUNTRY` for DE & EN data |
-| **Low Hanging Fruits** | Surfaces position 11–15 keywords with high existing impressions/SV that need just a small push to reach page 1 |
-| **Monetary Loss (Sistrix)** | Estimates the AdWords-equivalent value of traffic lost based on CPC data |
-| **Directory Analysis (Sistrix)** | Groups losses by URL path to identify underperforming site sections |
-| **Ranking Drop Categories** | Hard segments: Out of Top 3, Out of Top 10, Page 2 drops, Complete losses (fell out of Top 100) |
-| **Bilingual UI** | Full German & English interface — switch at any time without reloading |
-| **100% Private** | No database, no third-party APIs — all data lives in transient server RAM only |
+| **Dual Data Source Support** | Switch seamlessly between **Google Search Console** (real clicks & impressions) and **Sistrix** (search volume & CPC) depending on what data you want to analyze. |
+| **Ready-to-Paste Summaries** | Instantly writes a narrative executive summary of SEO performance (wins, page-1 drops, and low-hanging fruits) ready to paste directly into emails or slide decks. |
+| **Automatic Topic Clustering** | Automatically groups thousands of keywords into logical thematic clusters (by main search term) so you can see which product categories or topics lost the most visibility. |
+| **Search Intent Detection** | Classifies search terms as `KNOW` (informational), `DO` (transactional), `regional:CITY`, or `regional:COUNTRY` (for DE & EN data) to analyze if you lost transactional or informational traffic. |
+| **Low-Hanging Fruits Finder** | Instantly surfaces keywords ranking on page 2 (positions 11–15) with high impressions or search volume. These are your fastest opportunities for quick traffic gains. |
+| **AdWords Traffic Value (Sistrix)** | Translates organic traffic losses into concrete monetary value (using CPC data), showing you exactly how much it would cost to buy back that lost traffic with Google Ads. |
+| **Directory Performance (Sistrix)** | Groups ranking drops by URL directory (e.g. `/blog/` vs. `/shop/`) to identify which sections of your site took the biggest hits. |
+| **Categorized Ranking Drops** | Segments drops into clear action groups: Fell out of Top 3, Fell out of Top 10, Fell to Page 2, and Complete Losses (fell out of the Top 100). |
+| **Bilingual Interface** | Switch between a full German and English interface instantly at the click of a button in the sidebar. |
 
 ---
 
-## 📊 Analysis Tabs
+## 📁 How to export your CSV files
 
 ### Google Search Console Mode
-1. **Topic Clusters** — Keyword loss grouped by head terms, click-loss based
-2. **Ranking Drops** — Top 3 / Top 10 / Page 2 / Complete losses with click impact
-3. **Click Losses** — All losers sorted by absolute click loss
-4. **Low Hanging Fruits** — Position 11–15 keywords sorted by real impressions
-5. **Winners** — Keywords with click gains
-6. **All Data** — Full export with filters for cluster, change type, intent, keyword search
+1. Go to **Google Search Console** -> **Performance** -> **Search Results**.
+2. Set your filters, click on the date filter, select **Compare**, and choose your comparison periods (e.g., *Compare last 28 days to previous period*).
+3. Go to the **Queries** tab and click **Export** -> **Download CSV**.
+4. Upload the exported CSV to the analyzer.
 
 ### Sistrix Mode
-1. **Directory Analysis** — URL-path grouped traffic & value losses
-2. **Topic Clusters** — Keyword loss grouped by head terms, SV-based
-3. **Ranking Drops** — Top 3 / Top 10 / Page 2 / Complete losses with SV impact
-4. **Low Hanging Fruits** — Position 11–15 keywords sorted by search volume
-5. **Winners** — New Top-10 keywords
-6. **All Data** — Full export with filters for cluster, change type, directory, intent, keyword search
-
----
-
-## 📁 Supported Input Formats
-
-### Google Search Console
-Export a **date comparison** from GSC → Performance → Queries → Compare dates → Export as CSV.
-The file must have exactly **9 columns**: Keyword, Clicks (new/old), Impressions (new/old), CTR (new/old), Position (new/old).
-
-### Sistrix
-Export a **keyword comparison** from Sistrix → Keywords → Compare → Export as CSV.
-Required columns: `Keyword`, `Position#1`, `Position#2`, `Search Volume`, `URL`.
-Optional columns used when present: `CPC`, `Competition`.
+1. In **Sistrix**, go to **Keywords** -> **Compare**.
+2. Select the two dates you want to compare (e.g., current week vs. previous week or month).
+3. Click the **Export** button at the top right of the comparison table to download the CSV.
+4. Upload the exported CSV to the analyzer.
 
 ---
 
 ## 🚀 Quick Start
 
-### Option 1 — Streamlit Community Cloud (recommended)
-The app is hosted publicly at: **[your-app-url.streamlit.app](https://your-app-url.streamlit.app)**  
-No installation needed. Just open the link and upload your CSV.
+### Web App (No installation needed)
+The analyzer is hosted and ready to use online:
+👉 **[your-app-url.streamlit.app](https://your-app-url.streamlit.app)** *(Note: Replace with your actual deployed URL)*
 
-### Option 2 — Run locally with `uv` (fastest)
+---
 
-[`uv`](https://docs.astral.sh/uv/) handles the virtual environment and dependencies automatically:
+### Local Installation (For in-house SEO teams)
+
+If you prefer to run the analyzer locally on your computer:
+
+#### Option A: Running with `uv` (Recommended - fastest)
+[`uv`](https://docs.astral.sh/uv/) is a modern Python package manager that runs the tool without manual virtual environment setup:
 
 ```bash
 # Clone the repository
 git clone https://github.com/wingerter/seo-ranking-changes-analyzer.git
 cd seo-ranking-changes-analyzer
 
-# Run the app (installs dependencies on first run)
+# Run the app (automatically installs Python and dependencies)
 uv run --python 3.12 --with-requirements requirements.txt streamlit run app.py
 ```
 
-Open [http://localhost:8501](http://localhost:8501) in your browser.
-
-### Option 3 — Run locally with pip
-
+#### Option B: Running with standard `pip`
 ```bash
 # Clone the repository
 git clone https://github.com/wingerter/seo-ranking-changes-analyzer.git
 cd seo-ranking-changes-analyzer
 
-# Create and activate a virtual environment
+# Setup a virtual environment
 python -m venv .venv
 .venv\Scripts\activate        # Windows
 # source .venv/bin/activate   # macOS / Linux
 
-# Install dependencies
+# Install dependencies and start
 pip install -r requirements.txt
-
-# Start the app
 streamlit run app.py
 ```
+Open [http://localhost:8501](http://localhost:8501) in your browser.
 
 ---
 
-## 🛠️ Tech Stack
+## 🔒 Privacy & Security
 
-| Package | Purpose |
-|---|---|
-| [Streamlit](https://streamlit.io) | UI framework & server |
-| [Pandas](https://pandas.pydata.org) | Data processing |
-| [Plotly](https://plotly.com/python/) | Interactive charts |
-
-No external APIs are called at runtime.
-
----
-
-## 🔒 Privacy
-
-- Uploaded CSV files are processed **exclusively in transient RAM**.
-- Data is **never stored** on disk or in a database.
-- Data is **never sent** to any third-party service.
-- All data is erased the moment your session ends (tab close / page reload).
-- Hosting on Streamlit Community Cloud (Snowflake) processes connection logs and IP addresses. See the [Snowflake Privacy Policy](https://www.snowflake.com/legal/privacy-policy/) for details.
+*   Uploaded CSV files are processed **only in transient RAM**.
+*   No data is **ever stored** on disk or in a database.
+*   No data is **ever transmitted** to external APIs or third parties.
+*   Everything is erased the moment you close the browser tab or reload the page.
 
 ---
 
@@ -136,5 +108,3 @@ MIT License © 2026 Benjamin "SEOux Indianer" Wingerter
 [seouxindianer.de](https://seouxindianer.de)
 
 Co-developed with [Antigravity](https://antigravity.dev) 🤖 — AI Coding Assistant by Google DeepMind
-
-See [LICENSE](LICENSE) for the full license text.
