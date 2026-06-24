@@ -126,8 +126,8 @@ translations = {
         "brand_help": "Keywords containing these terms will be grouped into a 'Brand' cluster.",
         "cluster_count": "Number of Topic Clusters",
         "data_lang": "Data Language (for Search Intent)",
-        "data_lang_options": ["Deutsch", "English", "Español", "Français", "Italiano", "Other"],
-        "data_lang_help": "Select the language of your keyword data to correctly determine search intent (KNOW, DO, regional). For ES/FR/IT/Other, intent analysis is skipped.",
+        "data_lang_options": ["Deutsch", "English", "Español", "Français", "Italiano", "Nederlands", "Čeština", "Русский", "Other"],
+        "data_lang_help": "Select the language of your keyword data to correctly determine search intent (KNOW, DO, regional).",
         "btn_analyze": "Analyze",
         "err_format_gsc": "Could not recognize the GSC format. Please upload a standard Queries.csv from a GSC date comparison (exactly 9 columns expected).",
         "err_format_sistrix": "Could not recognize the Sistrix format. Please check the file (columns 'Keyword' and 'Position#1' must exist exactly like this).",
@@ -306,8 +306,8 @@ You have the right to access, rectify, erase, or restrict the processing of your
         "brand_help": "Keywords, die diese Begriffe enthalten, werden in einem eigenen 'Brand' Cluster gesammelt.",
         "cluster_count": "Anzahl der Themen-Cluster",
         "data_lang": "Daten-Sprache (für Suchintent)",
-        "data_lang_options": ["Deutsch", "English", "Español", "Français", "Italiano", "Andere"],
-        "data_lang_help": "Wähle die Sprache deiner Keyword-Daten, um den Suchintent korrekt zu bestimmen. Für ES/FR/IT/Andere wird die Analyse übersprungen.",
+        "data_lang_options": ["Deutsch", "English", "Español", "Français", "Italiano", "Nederlands", "Čeština", "Русский", "Andere"],
+        "data_lang_help": "Wähle die Sprache deiner Keyword-Daten, um den Suchintent korrekt zu bestimmen.",
         "btn_analyze": "Analysieren",
         "err_format_gsc": "Das GSC-Format konnte nicht erkannt werden. Bitte lade eine standardmäßige Queries.csv aus einem GSC-Zeitraumvergleich hoch (genau 9 Spalten erwartet).",
         "err_format_sistrix": "Konnte das Sistrix-Format nicht erkennen. Bitte prüfe die Datei (Spaltennamen 'Keyword' und 'Position#1' müssen exakt so existieren).",
@@ -531,7 +531,6 @@ def estimate_ctr(pos):
 def get_intent(kw, lang_choice):
     kw_lower = str(kw).lower()
     intents = []
-    # Supported languages only: Deutsch (index 0) and English (index 1)
     supported_options = t["data_lang_options"]
 
     if lang_choice == supported_options[0]:  # Deutsch
@@ -553,8 +552,68 @@ def get_intent(kw, lang_choice):
             intents.append("regional:CITY")
         if re.search(r'\b(us|usa|united\s+states|uk|united\s+kingdom|england|great\s+britain|canada|australia|nz|new\s+zealand|ireland|scotland|wales|south\s+africa)\b', kw_lower):
             intents.append("regional:COUNTRY")
+
+    elif lang_choice == supported_options[2]:  # Español
+        if re.search(r'\b(quién|quiénes|quien|quienes|qué|que|dónde|donde|cuándo|cuando|por\s+qué|por\s+que|cómo|como|cuál|cuales|de\s+quién|de\s+quien|guía|guia|tutorial|consejos|tips|definición|definicion|explicar|manual|ejemplo|ejemplos|aprender|curso|ayuda|bricolaje|paso\s+a\s+paso|preguntas\s+frecuentes|faq|faqs|foro)\b', kw_lower):
+            intents.append("KNOW")
+        if re.search(r'\b(comprar|pedir|barato|baratos|cupón|cupon|cupones|descuento|descuentos|descargar|gratis|gratuito|tienda|precio|precios|oferta|ofertas|rebajas|adquirir|compra|promo|promoción|promocion|promociones|alquilar|alquiler|reserva|reservar)\b', kw_lower):
+            intents.append("DO (Transactional)")
+        if re.search(r'\b(madrid|barcelona|valencia|sevilla|zaragoza|malaga|murcia|palma|bilbao|alicante)\b', kw_lower):
+            intents.append("regional:CITY")
+        if re.search(r'\b(españa|espana|mexico|colombia|argentina|peru|venezuela|chile|ecuador|guatemala|cuba)\b', kw_lower):
+            intents.append("regional:COUNTRY")
+
+    elif lang_choice == supported_options[3]:  # Français
+        if re.search(r'\b(qui|quoi|où|ou|quand|pourquoi|comment|quel|quels|quelle|quelles|guide|tutoriel|tuto|conseils|astuces|définition|definicion|definition|explication|exemple|exemples|apprendre|cours|aide|faq|forum)\b', kw_lower):
+            intents.append("KNOW")
+        if re.search(r'\b(acheter|commander|pas\s+cher|coupon|coupons|réduction|reductions|reduction|telecharger|télécharger|gratuit|boutique|prix|solde|soldes|achat|promo|promotion|promotions|louer|location|reserver|réserver)\b', kw_lower):
+            intents.append("DO (Transactional)")
+        if re.search(r'\b(paris|marseille|lyon|toulouse|nice|nantes|strasbourg|montpellier|bordeaux|lille)\b', kw_lower):
+            intents.append("regional:CITY")
+        if re.search(r'\b(france|belgique|suisse|canada|maroc|algérie|algerie|tunisie|sénégal|senegal)\b', kw_lower):
+            intents.append("regional:COUNTRY")
+
+    elif lang_choice == supported_options[4]:  # Italiano
+        if re.search(r'\b(chi|cosa|dove|quando|perché|perche|come|quale|quali|guida|tutorial|consigli|definizione|spiegazione|forum|esempio|esempi|imparare|corso|aiuto|faq)\b', kw_lower):
+            intents.append("KNOW")
+        if re.search(r'\b(comprare|ordinare|economico|economici|coupon|sconto|sconti|scaricare|gratis|gratuito|negozio|shop|prezzo|prezzi|offerta|offerte|vendita|noleggiare|noleggio|prenotare|prenotazione)\b', kw_lower):
+            intents.append("DO (Transactional)")
+        if re.search(r'\b(roma|milano|napoli|torino|palermo|genova|bologna|firenze|bari|catania)\b', kw_lower):
+            intents.append("regional:CITY")
+        if re.search(r'\b(italia|svizzera|san\s+marino)\b', kw_lower):
+            intents.append("regional:COUNTRY")
+
+    elif lang_choice == supported_options[5]:  # Nederlands
+        if re.search(r'\b(wie|wat|waar|wanneer|waarom|hoe|welke|gids|handleiding|tips|definitie|uitleg|forum|voorbeeld|voorbeelden|leren|cursus|hulp|faq)\b', kw_lower):
+            intents.append("KNOW")
+        if re.search(r'\b(kopen|bestellen|goedkoop|korting|kortingscode|downloaden|gratis|winkel|shop|prijs|prijzen|aanbieding|aanbiedingen|verkoop|huren|reservern|reserveren)\b', kw_lower):
+            intents.append("DO (Transactional)")
+        if re.search(r'\b(amsterdam|rotterdam|den\s+haag|utrecht|eindhoven|tilburg|almere|groningen|breda|nijmegen)\b', kw_lower):
+            intents.append("regional:CITY")
+        if re.search(r'\b(nederland|belgië|belgie|suriname|curaçao|curacao)\b', kw_lower):
+            intents.append("regional:COUNTRY")
+
+    elif lang_choice == supported_options[6]:  # Čeština
+        if re.search(r'\b(kdo|co|kde|kdy|proč|proc|jak|jaký|jaky|který|ktery|návod|navod|tipy|definice|vysvětlení|vysvetleni|fórum|forum|příklad|priklad|příklady|priklady|naučit|naucit|kurz|pomoc|faq)\b', kw_lower):
+            intents.append("KNOW")
+        if re.search(r'\b(koupit|objednat|levně|levne|levný|levny|kupón|kupon|sleva|slevy|stáhnout|stahnout|zdarma|obchod|e-shop|eshop|cena|ceny|výprodej|vyprodej|pronájem|pronajem|rezervovat|rezervace)\b', kw_lower):
+            intents.append("DO (Transactional)")
+        if re.search(r'\b(praha|brno|ostrava|plzeň|plzen|liberec|olomouc|ústí|usti|budějovice|budejovice|hradec|pardubice)\b', kw_lower):
+            intents.append("regional:CITY")
+        if re.search(r'\b(česko|cesko|česká\s+republika|ceska\s+republika|slovensko)\b', kw_lower):
+            intents.append("regional:COUNTRY")
+
+    elif lang_choice == supported_options[7]:  # Русский
+        if re.search(r'(^|\s)(кто|что|где|когда|почему|как|какой|какие|какая|инструкция|руководство|советы|определение|объяснение|форум|пример|примеры|научиться|курс|помощь)($|\s)', kw_lower):
+            intents.append("KNOW")
+        if re.search(r'(^|\s)(купить|заказать|дешево|купон|скидка|скидки|скачать|бесплатно|магазин|цена|цены|распродажа|аренда|забронировать)($|\s)', kw_lower):
+            intents.append("DO (Transactional)")
+        if re.search(r'(^|\s)(москва|петербург|спб|новосибирск|екатеринбург|казань|новгород|челябинск|самара|омск|ростов)($|\s)', kw_lower):
+            intents.append("regional:CITY")
+        if re.search(r'(^|\s)(россия|рф|беларусь|белоруссия|казахстан)($|\s)', kw_lower):
+            intents.append("regional:COUNTRY")
+
     else:
-        # ES, FR, IT, Other — analysis skipped
         return "not analyzed"
 
     return ", ".join(intents) if intents else "undefined"
@@ -1191,7 +1250,7 @@ if has_data and st.session_state['analyzed']:
     # =========================================================================
     # SHARED: Search Intent
     # =========================================================================
-    intent_skipped = data_lang_choice not in [t["data_lang_options"][0], t["data_lang_options"][1]]
+    intent_skipped = data_lang_choice == t["data_lang_options"][-1]
     if intent_skipped:
         df['Search Intent'] = "not analyzed"
     else:
