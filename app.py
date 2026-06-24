@@ -126,7 +126,7 @@ translations = {
         "brand_help": "Keywords containing these terms will be grouped into a 'Brand' cluster.",
         "cluster_count": "Number of Topic Clusters",
         "data_lang": "Data Language (for Search Intent)",
-        "data_lang_options": ["Deutsch", "English", "Español", "Français", "Italiano", "Nederlands", "Čeština", "Русский", "Português", "Hrvatski", "Latine", "Suomi", "Svenska", "tlhIngan Hol (Klingon)", "Other"],
+        "data_lang_options": ["Deutsch", "English", "Español", "Français", "Italiano", "Nederlands", "Čeština", "Русский", "Português", "Hrvatski", "Latine", "Suomi", "Svenska", "Українська", "tlhIngan Hol (Klingon)", "Other"],
         "data_lang_help": "Select the language of your keyword data to correctly determine search intent (KNOW, DO, regional).",
         "btn_analyze": "Analyze",
         "err_format_gsc": "Could not recognize the GSC format. Please upload a standard Queries.csv from a GSC date comparison (exactly 9 columns expected).",
@@ -306,7 +306,7 @@ You have the right to access, rectify, erase, or restrict the processing of your
         "brand_help": "Keywords, die diese Begriffe enthalten, werden in einem eigenen 'Brand' Cluster gesammelt.",
         "cluster_count": "Anzahl der Themen-Cluster",
         "data_lang": "Daten-Sprache (für Suchintent)",
-        "data_lang_options": ["Deutsch", "English", "Español", "Français", "Italiano", "Nederlands", "Čeština", "Русский", "Português", "Hrvatski", "Latine", "Suomi", "Svenska", "tlhIngan Hol (Klingon)", "Andere"],
+        "data_lang_options": ["Deutsch", "English", "Español", "Français", "Italiano", "Nederlands", "Čeština", "Русский", "Português", "Hrvatski", "Latine", "Suomi", "Svenska", "Українська", "tlhIngan Hol (Klingon)", "Andere"],
         "data_lang_help": "Wähle die Sprache deiner Keyword-Daten, um den Suchintent korrekt zu bestimmen.",
         "btn_analyze": "Analysieren",
         "err_format_gsc": "Das GSC-Format konnte nicht erkannt werden. Bitte lade eine standardmäßige Queries.csv aus einem GSC-Zeitraumvergleich hoch (genau 9 Spalten erwartet).",
@@ -663,7 +663,17 @@ def get_intent(kw, lang_choice):
         if re.search(r'\b(sverige|norge|danmark|finland)\b', kw_lower):
             intents.append("regional:COUNTRY")
 
-    elif lang_choice == supported_options[13]:  # Klingon
+    elif lang_choice == supported_options[13]:  # Українська
+        if re.search(r'\b(хто|що|де|коли|чому|як|який|яка|яке|які|довідник|посібник|поради|визначення|пояснення|форум|faq|питання)\b', kw_lower):
+            intents.append("KNOW")
+        if re.search(r'\b(купити|замовити|дешево|купон|знижка|завантажити|безкоштовно|магазин|ціна|ціни|продаж|акція|орендувати|бронювати)\b', kw_lower):
+            intents.append("DO (Transactional)")
+        if re.search(r'\b(київ|харків|одеса|дніпро|львів|запоріжжя|кривий\s+ріг|миколаїв|маріуполь|вінниця|херсон|полтава|чернігів|черкаси|суми|хмельницький|житомир|чернівці|рівне|кам\'янське|кропивницький|івано-франківськ|кременчук|тернопіль|луцьк|біла\s+церква|краматорськ|мелітополь|ужгород)\b', kw_lower):
+            intents.append("regional:CITY")
+        if re.search(r'\b(україна|польща|румунія|молдова|угорщина|словаччина|європа)\b', kw_lower):
+            intents.append("regional:COUNTRY")
+
+    elif lang_choice == supported_options[14]:  # Klingon
         if re.search(r"(\b|^)('Iv|nuq|nuqDaq|ghorgh|qatlh|chay'|mIgh|gholl|tutorial|faq|forum|ghoj|boQ)(\b|$)", kw_lower):
             intents.append("KNOW")
         if re.search(r"(\b|^)(je'|cheap|coupon|download|gratis|Huch|nej|lura'|lo')(\b|$)", kw_lower):
