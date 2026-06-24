@@ -81,7 +81,8 @@ section[data-testid="stSidebar"] hr {
 </style>
 """, unsafe_allow_html=True)
 
-# Sidebar: compact language toggle only (logo moves to bottom)
+# Sidebar: Title and compact language toggle only (logo moves to bottom)
+st.sidebar.markdown("### SEO Ranking Changes Analyzer")
 lang_choice = st.sidebar.radio("Language / Sprache", options=["DE", "EN"], index=0, horizontal=True, key="app_language_choice")
 lang = "DE" if "DE" in lang_choice else "EN"
 
