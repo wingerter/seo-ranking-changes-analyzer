@@ -813,7 +813,9 @@ st.sidebar.subheader(t["pdf_settings_header"])
 max_pdf_rows = st.sidebar.slider(t["max_pdf_rows_label"], min_value=10, max_value=200, value=50, step=10, help=t["max_pdf_rows_help"], key="max_pdf_rows")
 
 if uploaded_file is not None:
-    st.sidebar.button(t["btn_analyze"], type="primary", on_click=trigger_analysis, key="btn_analyze_data")
+    col_btn_l, col_btn_r = st.sidebar.columns([4, 6])
+    with col_btn_r:
+        st.button(t["btn_analyze"], type="primary", on_click=trigger_analysis, key="btn_analyze_data", use_container_width=True)
 
 # Sidebar — Logo (full width) + Legal
 st.sidebar.markdown("---")
