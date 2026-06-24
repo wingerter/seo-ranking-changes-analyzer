@@ -126,7 +126,7 @@ translations = {
         "brand_help": "Keywords containing these terms will be grouped into a 'Brand' cluster.",
         "cluster_count": "Number of Topic Clusters",
         "data_lang": "Data Language (for Search Intent)",
-        "data_lang_options": ["Deutsch", "English", "Español", "Français", "Italiano", "Nederlands", "Čeština", "Русский", "Português", "Hrvatski", "Latine", "tlhIngan Hol (Klingon)", "Other"],
+        "data_lang_options": ["Deutsch", "English", "Español", "Français", "Italiano", "Nederlands", "Čeština", "Русский", "Português", "Hrvatski", "Latine", "Suomi", "Svenska", "tlhIngan Hol (Klingon)", "Other"],
         "data_lang_help": "Select the language of your keyword data to correctly determine search intent (KNOW, DO, regional).",
         "btn_analyze": "Analyze",
         "err_format_gsc": "Could not recognize the GSC format. Please upload a standard Queries.csv from a GSC date comparison (exactly 9 columns expected).",
@@ -306,7 +306,7 @@ You have the right to access, rectify, erase, or restrict the processing of your
         "brand_help": "Keywords, die diese Begriffe enthalten, werden in einem eigenen 'Brand' Cluster gesammelt.",
         "cluster_count": "Anzahl der Themen-Cluster",
         "data_lang": "Daten-Sprache (für Suchintent)",
-        "data_lang_options": ["Deutsch", "English", "Español", "Français", "Italiano", "Nederlands", "Čeština", "Русский", "Português", "Hrvatski", "Latine", "tlhIngan Hol (Klingon)", "Andere"],
+        "data_lang_options": ["Deutsch", "English", "Español", "Français", "Italiano", "Nederlands", "Čeština", "Русский", "Português", "Hrvatski", "Latine", "Suomi", "Svenska", "tlhIngan Hol (Klingon)", "Andere"],
         "data_lang_help": "Wähle die Sprache deiner Keyword-Daten, um den Suchintent korrekt zu bestimmen.",
         "btn_analyze": "Analysieren",
         "err_format_gsc": "Das GSC-Format konnte nicht erkannt werden. Bitte lade eine standardmäßige Queries.csv aus einem GSC-Zeitraumvergleich hoch (genau 9 Spalten erwartet).",
@@ -643,7 +643,27 @@ def get_intent(kw, lang_choice):
         if re.search(r'\b(italia|gallia|hispania|germania|britannia|graecia|aegyptus)\b', kw_lower):
             intents.append("regional:COUNTRY")
 
-    elif lang_choice == supported_options[11]:  # Klingon
+    elif lang_choice == supported_options[11]:  # Suomi
+        if re.search(r'\b(kuka|mikä|mika|missä|missa|milloin|miksi|miten|opas|ohje|vinkkejä|vinkkeja|määritelmä|maaritelma|selitys|foorumi|forum|kysymys|faq)\b', kw_lower):
+            intents.append("KNOW")
+        if re.search(r'\b(ostaa|tilata|halpa|kuponki|alennus|lataa|ladata|ilmainen|kauppa|hinta|hinnat|tarjous|tarjoukset|vuokrata|varata|varaus)\b', kw_lower):
+            intents.append("DO (Transactional)")
+        if re.search(r'\b(helsinki|espoo|tampere|vantaa|oulu|turku|jyväskylä|jyvaskyla|lahti|kuopio|pori)\b', kw_lower):
+            intents.append("regional:CITY")
+        if re.search(r'\b(suomi|finland|ruotsi|norja|viro)\b', kw_lower):
+            intents.append("regional:COUNTRY")
+
+    elif lang_choice == supported_options[12]:  # Svenska
+        if re.search(r'\b(vem|vad|var|när|ner|varför|varfor|hur|vilken|vilket|vilka|guide|handledning|tips|definition|förklaring|forklaring|forum|faq)\b', kw_lower):
+            intents.append("KNOW")
+        if re.search(r'\b(köpa|kopa|beställa|bestalla|billig|kupong|rabatt|ladda\s+ner|gratis|butik|affär|affar|pris|priser|rea|erbjudande|hyra|boka|bokning)\b', kw_lower):
+            intents.append("DO (Transactional)")
+        if re.search(r'\b(stockholm|göteborg|goteborg|malmö|malmo|uppsala|västerås|vasteras|örebro|orebro|linköping|linkoping|helsingborg)\b', kw_lower):
+            intents.append("regional:CITY")
+        if re.search(r'\b(sverige|norge|danmark|finland)\b', kw_lower):
+            intents.append("regional:COUNTRY")
+
+    elif lang_choice == supported_options[13]:  # Klingon
         if re.search(r"(\b|^)('Iv|nuq|nuqDaq|ghorgh|qatlh|chay'|mIgh|gholl|tutorial|faq|forum|ghoj|boQ)(\b|$)", kw_lower):
             intents.append("KNOW")
         if re.search(r"(\b|^)(je'|cheap|coupon|download|gratis|Huch|nej|lura'|lo')(\b|$)", kw_lower):
