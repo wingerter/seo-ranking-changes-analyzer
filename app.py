@@ -9,6 +9,7 @@ import re
 import base64
 import time
 import subprocess
+import contextlib
 from collections import Counter
 import streamlit.components.v1 as components
 
@@ -17,6 +18,16 @@ st.set_page_config(
     page_icon="assets/logo-head-clear.png",
     layout="wide"
 )
+
+# Initialize session state variables early
+if 'analyzed' not in st.session_state:
+    st.session_state['analyzed'] = False
+if 'print_mode' not in st.session_state:
+    st.session_state['print_mode'] = False
+
+# Reset print mode if not analyzed to prevent rendering print preview of empty setup screen
+if not st.session_state['analyzed']:
+    st.session_state['print_mode'] = False
 
 # --- Load Brand Styles ---
 try:
@@ -71,7 +82,7 @@ section[data-testid="stSidebar"] hr {
 """, unsafe_allow_html=True)
 
 # Sidebar: compact language toggle only (logo moves to bottom)
-lang_choice = st.sidebar.radio("Language / Sprache", options=["DE", "EN"], index=0, horizontal=True)
+lang_choice = st.sidebar.radio("Language / Sprache", options=["DE", "EN"], index=0, horizontal=True, key="app_language_choice")
 lang = "DE" if "DE" in lang_choice else "EN"
 
 st.sidebar.markdown("---")
@@ -82,7 +93,7 @@ mode_options_en = ["Google Search Console (Queries.csv)", "Sistrix (Keyword Comp
 mode_options = mode_options_de if lang == "DE" else mode_options_en
 
 mode_label = "Datenquelle / Analysemodus" if lang == "DE" else "Data Source / Analysis Mode"
-mode = st.sidebar.selectbox(mode_label, options=mode_options, index=0)
+mode = st.sidebar.selectbox(mode_label, options=mode_options, index=0, key="app_analysis_mode")
 mode_key = "gsc" if "Google" in mode else "sistrix"
 
 # =============================================================================
@@ -224,6 +235,16 @@ translations = {
         "lhf_diff_label": "Difficulty",
         "lhf_diff_help": "Estimated ranking difficulty based on search volume or impressions",
         "dir_chart_title_tree": "Lost Search Volume Distribution by Directory (Treemap)",
+        "btn_export_pdf": "📄 Export PDF Report",
+        "print_mode_title": "📄 PDF Export - Print Preview",
+        "print_mode_desc": "All sections of the dashboard are listed below. Click 'Save PDF' to download the compiled report.",
+        "btn_save_pdf": "📄 Save PDF",
+        "btn_back_dashboard": "◀ Back to Dashboard",
+        "pdf_generating": "Generating PDF...",
+        "pdf_settings_header": "2. PDF Export Settings",
+        "max_pdf_rows_label": "Max. rows per table in PDF",
+        "max_pdf_rows_help": "Limits the number of rows displayed in tables to keep the PDF report compact.",
+        "pdf_truncated_note": "Showing top {limit} of {total} rows in PDF export.",
         # Footer / Legal
         "footer": "MIT License &copy; 2026 Benjamin &quot;SEOux Indianer&quot; Wingerter | Created in Munich &amp; Bangkok with ❤️ | <a href='https://seouxindianer.de' target='_blank' style='color: #2ea3f2; text-decoration: underline;'>seouxindianer.de</a> | Co-developed with Antigravity 🤖",
         "legal_header": "Legal & Privacy Policy",
@@ -394,6 +415,16 @@ You have the right to access, rectify, erase, or restrict the processing of your
         "lhf_diff_label": "Schwierigkeit",
         "lhf_diff_help": "Geschätzte Ranking-Schwierigkeit basierend auf Suchvolumen oder Impressionen",
         "dir_chart_title_tree": "Verteilung des verlorenen Suchvolumens nach Verzeichnis (Treemap)",
+        "btn_export_pdf": "📄 PDF Report exportieren",
+        "print_mode_title": "📄 PDF Export - Druckansicht",
+        "print_mode_desc": "Alle Bereiche des Dashboards sind nachfolgend aufgeführt. Klicke auf 'PDF speichern', um den fertigen Bericht herunterzuladen.",
+        "btn_save_pdf": "📄 PDF speichern",
+        "btn_back_dashboard": "◀ Zurück zum Dashboard",
+        "pdf_generating": "PDF wird generiert...",
+        "pdf_settings_header": "2. PDF Export-Einstellungen",
+        "max_pdf_rows_label": "Max. Zeilen pro Tabelle im PDF",
+        "max_pdf_rows_help": "Begrenzt die Anzahl der Zeilen in den Tabellen, um den PDF-Bericht kompakt zu halten.",
+        "pdf_truncated_note": "Es werden nur die Top {limit} von {total} Zeilen im PDF-Export angezeigt.",
         # Footer / Legal
         "footer": "MIT License &copy; 2026 Benjamin &quot;SEOux Indianer&quot; Wingerter | Erstellt in München &amp; Bangkok mit ❤️ | <a href='https://seouxindianer.de' target='_blank' style='color: #2ea3f2; text-decoration: underline;'>seouxindianer.de</a> | Mitentwickelt von Antigravity 🤖",
         "legal_header": "Rechtliches / Impressum",
@@ -556,7 +587,11 @@ def display_styled_dataframe(df_to_show, sort_col, ascending=False):
     loss_cols = [c for c in ['Traffic Loss', 'Lost Value €', 'Clicks Loss'] if c in df_to_show.columns]
     gain_cols = [c for c in ['Traffic Gain', 'Clicks Gain'] if c in df_to_show.columns]
 
-    styler = df_to_show.sort_values(sort_col, ascending=ascending).style
+    df_sorted = df_to_show.sort_values(sort_col, ascending=ascending)
+    if st.session_state.get('print_mode', False):
+        limit = st.session_state.get('max_pdf_rows', 50)
+        df_sorted = df_sorted.head(limit)
+    styler = df_sorted.style
     format_dict = {}
 
     if loss_cols:
@@ -597,13 +632,96 @@ def display_styled_dataframe(df_to_show, sort_col, ascending=False):
             format_dict[c] = lambda x: f"▲ +{format_num(x)}" if pd.notnull(x) and x > 0 else (f"▼ -{format_num(abs(x))}" if pd.notnull(x) and x < 0 else "0")
 
     styler = styler.format(format_dict)
-    st.dataframe(styler, use_container_width=True)
+    if st.session_state.get('print_mode', False):
+        st.markdown(styler.to_html(), unsafe_allow_html=True)
+        limit = st.session_state.get('max_pdf_rows', 50)
+        if len(df_to_show) > limit:
+            st.markdown(f"<div style='font-size:0.85em; color:#797979; margin-top:5px;'><i>* {t['pdf_truncated_note'].format(limit=limit, total=len(df_to_show))}</i></div>", unsafe_allow_html=True)
+    else:
+        st.dataframe(styler, use_container_width=True)
 
 # =============================================================================
-# APP TITLE
+# APP TITLE & PDF EXPORT OVERRIDE
 # =============================================================================
-st.title(t[f"title_{mode_key}"])
-st.markdown(t[f"subtitle_{mode_key}"])
+
+# Print mode style override (hides sidebar/header from screen during print preview)
+if st.session_state.get("print_mode", False):
+    st.markdown("""
+        <style>
+            [data-testid="stHeader"] {
+                display: none !important;
+            }
+            .main .block-container {
+                max-width: 1200px !important;
+                padding-top: 1rem !important;
+                padding-bottom: 2rem !important;
+            }
+        </style>
+    """, unsafe_allow_html=True)
+    
+    # Render the Print Preview Toolbar
+    with st.container(border=True, key="print_toolbar"):
+        col_title, col_save, col_back = st.columns([6, 2.5, 2.5])
+        with col_title:
+            st.markdown(f"<h3 style='margin: 0; padding: 0;'>{t['print_mode_title']}</h3>", unsafe_allow_html=True)
+            st.write(t["print_mode_desc"])
+        with col_save:
+            html_code = f"""
+            <script>
+            function savePDF() {{
+                window.parent.print();
+            }}
+            </script>
+            <button id="pdf-btn" onclick="savePDF()" style="
+                background-color: #d28063;
+                color: #ffffff;
+                border: 1px solid #d28063;
+                border-radius: 8px;
+                padding: 0.5rem 1rem;
+                font-weight: 600;
+                font-family: 'Open Sans', Arial, sans-serif;
+                cursor: pointer;
+                width: 100%;
+                height: 38px;
+                box-sizing: border-box;
+                transition: all 120ms ease;
+            ">
+                {t['btn_save_pdf']}
+            </button>
+            <style>
+            button:hover {{
+                background-color: #7e2929 !important;
+                border-color: #7e2929 !important;
+            }}
+            </style>
+            """
+            components.html(html_code, height=45)
+        with col_back:
+            if st.button(t["btn_back_dashboard"], key="back_from_print", type="secondary", use_container_width=True):
+                st.session_state['print_mode'] = False
+                st.rerun()
+
+# Render Title and Subtitle (with Logo in print mode)
+if st.session_state.get("print_mode", False):
+    col_hdr_title, col_hdr_logo = st.columns([7.5, 2.5])
+    with col_hdr_title:
+        st.title(t[f"title_{mode_key}"])
+        st.markdown(t[f"subtitle_{mode_key}"])
+    with col_hdr_logo:
+        st.markdown("<div style='text-align: right; padding-top: 1.5rem;' class='print-logo-container'>", unsafe_allow_html=True)
+        st.image("assets/logo-horizontal.png", use_container_width=True)
+        st.markdown("</div>", unsafe_allow_html=True)
+else:
+    st.title(t[f"title_{mode_key}"])
+    st.markdown(t[f"subtitle_{mode_key}"])
+
+# Show export button if analyzed and not in print mode
+if st.session_state.get('analyzed', False) and not st.session_state.get('print_mode', False):
+    btn_col_1, btn_col_2 = st.columns([8, 2])
+    with btn_col_2:
+        if st.button(t["btn_export_pdf"], key="trigger_print_mode", type="secondary", use_container_width=True):
+            st.session_state['print_mode'] = True
+            st.rerun()
 
 # =============================================================================
 # LOADING OVERLAY
@@ -678,21 +796,24 @@ def on_file_upload():
     st.session_state['show_success_alert'] = False
 
 upload_label = t[f"upload_label_{mode_key}"]
-uploaded_file = st.sidebar.file_uploader(upload_label, type=["csv"], on_change=on_file_upload)
+uploaded_file = st.sidebar.file_uploader(upload_label, type=["csv"], key=f"uploader_{mode_key}", on_change=on_file_upload)
 
 # Date inputs — Sistrix mode only
 if mode_key == "sistrix":
     st.sidebar.subheader(t["dates_header"])
-    date_old = st.sidebar.date_input(t["date_old"], value=pd.to_datetime('today') - pd.DateOffset(months=1))
-    date_new = st.sidebar.date_input(t["date_new"], value=pd.to_datetime('today'))
+    date_old = st.sidebar.date_input(t["date_old"], value=pd.to_datetime('today') - pd.DateOffset(months=1), key="sistrix_date_old")
+    date_new = st.sidebar.date_input(t["date_new"], value=pd.to_datetime('today'), key="sistrix_date_new")
 
 st.sidebar.subheader(t["cluster_settings"])
-brand_input = st.sidebar.text_input(t["brand_input"], value="", help=t["brand_help"])
-num_clusters = st.sidebar.slider(t["cluster_count"], min_value=5, max_value=50, value=20, step=5)
-data_lang_choice = st.sidebar.selectbox(t["data_lang"], options=t["data_lang_options"], index=0, help=t["data_lang_help"])
+brand_input = st.sidebar.text_input(t["brand_input"], value="", help=t["brand_help"], key=f"brand_input_{mode_key}")
+num_clusters = st.sidebar.slider(t["cluster_count"], min_value=5, max_value=50, value=20, step=5, key=f"num_clusters_{mode_key}")
+data_lang_choice = st.sidebar.selectbox(t["data_lang"], options=t["data_lang_options"], index=0, help=t["data_lang_help"], key=f"data_lang_{mode_key}")
+
+st.sidebar.subheader(t["pdf_settings_header"])
+max_pdf_rows = st.sidebar.slider(t["max_pdf_rows_label"], min_value=10, max_value=200, value=50, step=10, help=t["max_pdf_rows_help"], key="max_pdf_rows")
 
 if uploaded_file is not None:
-    st.sidebar.button(t["btn_analyze"], type="primary", on_click=trigger_analysis)
+    st.sidebar.button(t["btn_analyze"], type="primary", on_click=trigger_analysis, key="btn_analyze_data")
 
 # Sidebar — Logo (full width) + Legal
 st.sidebar.markdown("---")
@@ -707,63 +828,74 @@ with st.sidebar.expander(t["legal_header"]):
 # =============================================================================
 pct_sign = " %" if lang == "DE" else "%"
 
-if uploaded_file is not None and st.session_state['analyzed']:
+# Check if we have an uploaded file or a cached backup dataframe
+has_data = uploaded_file is not None or (st.session_state.get('df_backup') is not None and st.session_state.get('mode_backup') == mode_key)
+
+if has_data and st.session_state['analyzed']:
 
     # =========================================================================
     # PARSING — branched by mode
     # =========================================================================
     try:
-        content = uploaded_file.getvalue()
         df = None
+        if uploaded_file is not None:
+            content = uploaded_file.getvalue()
 
-        if mode_key == "gsc":
-            # GSC: detect 9-column CSV
-            for enc in ['utf-8', 'utf-16', 'latin1', 'utf-8-sig']:
-                for sep in [',', ';', '\t']:
-                    try:
-                        temp_df = pd.read_csv(io.BytesIO(content), encoding=enc, sep=sep)
-                        if len(temp_df.columns) == 9:
-                            df = temp_df
-                            break
-                    except Exception:
-                        continue
-                if df is not None:
-                    break
-            if df is None:
-                raise Exception(t["err_format_gsc"])
-            df.columns = [
-                "Keyword",
-                "Clicks_New", "Clicks_Old",
-                "Impressions_New", "Impressions_Old",
-                "CTR_New", "CTR_Old",
-                "Position_New", "Position_Old"
-            ]
-
-        elif mode_key == "sistrix":
-            # Sistrix: detect Keyword + Position#1 columns
-            for enc in ['utf-8', 'utf-16', 'latin1', 'utf-8-sig']:
-                for sep in ['\t', ';', ',']:
-                    for skip in [0, 1, 2, 3, 4, 5]:
+            if mode_key == "gsc":
+                # GSC: detect 9-column CSV
+                for enc in ['utf-8', 'utf-16', 'latin1', 'utf-8-sig']:
+                    for sep in [',', ';', '\t']:
                         try:
-                            temp_df = pd.read_csv(io.BytesIO(content), encoding=enc, sep=sep, skiprows=skip, on_bad_lines='skip')
-                            temp_df.columns = [str(c).strip().strip('"').strip("'") for c in temp_df.columns]
-                            if 'Keyword' in temp_df.columns and 'Position#1' in temp_df.columns:
+                            temp_df = pd.read_csv(io.BytesIO(content), encoding=enc, sep=sep)
+                            if len(temp_df.columns) == 9:
                                 df = temp_df
                                 break
                         except Exception:
                             continue
                     if df is not None:
                         break
-                if df is not None:
-                    break
-            if df is None:
-                raise Exception(t["err_format_sistrix"])
+                if df is None:
+                    raise Exception(t["err_format_gsc"])
+                df.columns = [
+                    "Keyword",
+                    "Clicks_New", "Clicks_Old",
+                    "Impressions_New", "Impressions_Old",
+                    "CTR_New", "CTR_Old",
+                    "Position_New", "Position_Old"
+                ]
 
-            req_cols = ["Keyword", "Position#1", "Position#2", "Search Volume", "URL"]
-            missing_cols = [col for col in req_cols if col not in df.columns]
-            if missing_cols:
-                st.error(f"{t['err_req']} {missing_cols}")
-                st.stop()
+            elif mode_key == "sistrix":
+                # Sistrix: detect Keyword + Position#1 columns
+                for enc in ['utf-8', 'utf-16', 'latin1', 'utf-8-sig']:
+                    for sep in ['\t', ';', ',']:
+                        for skip in [0, 1, 2, 3, 4, 5]:
+                            try:
+                                temp_df = pd.read_csv(io.BytesIO(content), encoding=enc, sep=sep, skiprows=skip, on_bad_lines='skip')
+                                temp_df.columns = [str(c).strip().strip('"').strip("'") for c in temp_df.columns]
+                                if 'Keyword' in temp_df.columns and 'Position#1' in temp_df.columns:
+                                    df = temp_df
+                                    break
+                            except Exception:
+                                continue
+                        if df is not None:
+                            break
+                    if df is not None:
+                        break
+                if df is None:
+                    raise Exception(t["err_format_sistrix"])
+
+                req_cols = ["Keyword", "Position#1", "Position#2", "Search Volume", "URL"]
+                missing_cols = [col for col in req_cols if col not in df.columns]
+                if missing_cols:
+                    st.error(f"{t['err_req']} {missing_cols}")
+                    st.stop()
+
+            # Store backup in session state
+            st.session_state['df_backup'] = df.copy() if df is not None else None
+            st.session_state['mode_backup'] = mode_key
+        else:
+            # Restore from backup
+            df = st.session_state['df_backup'].copy()
 
     except Exception as e:
         st.error(f"{t['err_read']}{e}")
@@ -1029,10 +1161,19 @@ if uploaded_file is not None and st.session_state['analyzed']:
             st.session_state["main_tabs"] = t["tab_drops"]
 
     if mode_key == "gsc":
-        tab_sum, tab2, tab5, tab4, tab3, tab1, tab6 = st.tabs([
-            t["tab_summary"], t["tab_drops"], t["tab_winners"], t["tab_lhf"],
-            t["tab_losses"], t["tab_cluster"], t["tab_all"]
-        ], key="main_tabs", on_change=on_tab_change)
+        if st.session_state.get('print_mode', False):
+            tab_sum = contextlib.nullcontext()
+            tab2 = contextlib.nullcontext()
+            tab5 = contextlib.nullcontext()
+            tab4 = contextlib.nullcontext()
+            tab3 = contextlib.nullcontext()
+            tab1 = contextlib.nullcontext()
+            tab6 = contextlib.nullcontext()
+        else:
+            tab_sum, tab2, tab5, tab4, tab3, tab1, tab6 = st.tabs([
+                t["tab_summary"], t["tab_drops"], t["tab_winners"], t["tab_lhf"],
+                t["tab_losses"], t["tab_cluster"], t["tab_all"]
+            ], key="main_tabs", on_change=on_tab_change)
 
         with tab_sum:
             st.header(t["kpi_header_gsc"])
@@ -1231,6 +1372,8 @@ if uploaded_file is not None and st.session_state['analyzed']:
 
 
         with tab1:
+            if st.session_state.get('print_mode', False):
+                st.markdown(f"<h2 class='print-page-break'>{t['tab_cluster']}</h2>", unsafe_allow_html=True)
             st.subheader(t["cl_sub"])
             st.markdown(t["cl_desc"])
             if not losers.empty:
@@ -1256,8 +1399,13 @@ if uploaded_file is not None and st.session_state['analyzed']:
                 st.info(t["cl_empty"])
 
         with tab2:
+            if st.session_state.get('print_mode', False):
+                st.markdown(f"<h2 class='print-page-break'>{t['tab_drops']}</h2>", unsafe_allow_html=True)
             st.subheader(t["rd_sub"])
-            kw_filter = st.text_input(t["rd_filter"]).strip().lower()
+            if not st.session_state.get('print_mode', False):
+                kw_filter = st.text_input(t["rd_filter"]).strip().lower()
+            else:
+                kw_filter = ""
             f_top3 = top3_drops[top3_drops['Keyword'].astype(str).str.lower().str.contains(kw_filter, na=False)] if kw_filter else top3_drops
             f_top10 = top10_drops[top10_drops['Keyword'].astype(str).str.lower().str.contains(kw_filter, na=False)] if kw_filter else top10_drops
             f_page2 = page2_drops[page2_drops['Keyword'].astype(str).str.lower().str.contains(kw_filter, na=False)] if kw_filter else page2_drops
@@ -1314,10 +1462,14 @@ if uploaded_file is not None and st.session_state['analyzed']:
                 st.info(t["rd_100_empty"])
 
         with tab3:
+            if st.session_state.get('print_mode', False):
+                st.markdown(f"<h2 class='print-page-break'>{t['tab_losses']}</h2>", unsafe_allow_html=True)
             st.subheader(t["cd_sub"])
             display_styled_dataframe(losers[['Keyword', 'Position Change', 'Position_Old', 'Position_New', 'Clicks Loss', 'Clicks_Old', 'Clicks_New']], sort_col='Clicks Loss')
 
         with tab4:
+            if st.session_state.get('print_mode', False):
+                st.markdown(f"<h2 class='print-page-break'>{t['tab_lhf']}</h2>", unsafe_allow_html=True)
             st.subheader(t["lhf_sub"], anchor="low-hanging-fruits")
             st.markdown(t["lhf_desc_gsc"])
             if not low_hanging.empty:
@@ -1334,27 +1486,32 @@ if uploaded_file is not None and st.session_state['analyzed']:
                 styler = styler.map(lambda x: 'color: #90c274; font-weight: bold;' if pd.notnull(x) and x > 0 else ('color: #d28063; font-weight: bold;' if pd.notnull(x) and x < 0 else ''), subset=['Position Change'])
                 format_dict['Position Change'] = lambda x: f"▲ +{format_num(abs(x), 2)}" if pd.notnull(x) and x > 0 else (f"▼ -{format_num(abs(x), 2)}" if pd.notnull(x) and x < 0 else format_num(0.0, 2))
                 styler = styler.format(format_dict)
-                st.dataframe(
-                    styler,
-                    column_config={
-                        "Potential Score": st.column_config.ProgressColumn(
-                            "Potential Score",
-                            help=t.get("lhf_pot_help", "Calculated potential (0-10)"),
-                            format="%.1f",
-                            min_value=0.0,
-                            max_value=10.0,
-                        ),
-                        "Difficulty": st.column_config.TextColumn(
-                            t.get("lhf_diff_label", "Difficulty"),
-                            help=t.get("lhf_diff_help", "Estimated difficulty")
-                        )
-                    },
-                    use_container_width=True
-                )
+                if st.session_state.get('print_mode', False):
+                    st.markdown(styler.to_html(), unsafe_allow_html=True)
+                else:
+                    st.dataframe(
+                        styler,
+                        column_config={
+                            "Potential Score": st.column_config.ProgressColumn(
+                                "Potential Score",
+                                help=t.get("lhf_pot_help", "Calculated potential (0-10)"),
+                                format="%.1f",
+                                min_value=0.0,
+                                max_value=10.0,
+                            ),
+                            "Difficulty": st.column_config.TextColumn(
+                                t.get("lhf_diff_label", "Difficulty"),
+                                help=t.get("lhf_diff_help", "Estimated difficulty")
+                            )
+                        },
+                        use_container_width=True
+                    )
             else:
                 st.info(t["lhf_empty"])
 
         with tab5:
+            if st.session_state.get('print_mode', False):
+                st.markdown(f"<h2 class='print-page-break'>{t['tab_winners']}</h2>", unsafe_allow_html=True)
             st.subheader(t["win_sub_gsc"])
             if not winners.empty:
                 display_winners = winners[(winners['Position Change'] > 0) & (~((winners['Position_New'] > 11) & (winners['Position Change'] < 9)))]
@@ -1373,42 +1530,52 @@ if uploaded_file is not None and st.session_state['analyzed']:
             else:
                 st.info(t["win_empty"])
 
-        with tab6:
-            st.subheader(t["ad_sub"])
-            all_cols = ['Cluster', 'Search Intent', 'Keyword', 'Change', 'Position Change', 'Clicks Change',
-                        'Position_Old', 'Position_New', 'Impressions_Old', 'Impressions_New', 'Clicks_Old', 'Clicks_New']
-            all_cols = [c for c in all_cols if c in df.columns]
-            col_f1, col_f2, col_f3, col_f4 = st.columns(4)
-            with col_f1:
-                all_clusters = sorted(df['Cluster'].dropna().unique().tolist())
-                sel_cluster = st.multiselect(t["ad_filter_cluster"], options=all_clusters)
-            with col_f2:
-                all_intents = set()
-                for i in df['Search Intent'].dropna():
-                    for piece in i.split(', '):
-                        all_intents.add(piece)
-                sel_intent = st.multiselect(t["ad_filter_intent"], options=sorted(list(all_intents)))
-            with col_f3:
-                all_changes = sorted(df['Change'].dropna().unique().tolist())
-                sel_change = st.multiselect(t["ad_filter_change"], options=all_changes)
-            with col_f4:
-                search_kw = st.text_input(t["ad_filter_kw"], key="ad_kw")
-            f_df = df[all_cols].copy()
-            if sel_cluster:
-                f_df = f_df[f_df['Cluster'].isin(sel_cluster)]
-            if sel_intent:
-                f_df = f_df[f_df['Search Intent'].apply(lambda x: any(c in x for c in sel_intent))]
-            if sel_change:
-                f_df = f_df[f_df['Change'].isin(sel_change)]
-            if search_kw:
-                f_df = f_df[f_df['Keyword'].astype(str).str.lower().str.contains(search_kw.lower(), na=False)]
-            display_styled_dataframe(f_df, sort_col='Clicks Change', ascending=False)
+        if not st.session_state.get('print_mode', False):
+            with tab6:
+                st.subheader(t["ad_sub"])
+                all_cols = ['Cluster', 'Search Intent', 'Keyword', 'Change', 'Position Change', 'Clicks Change',
+                            'Position_Old', 'Position_New', 'Impressions_Old', 'Impressions_New', 'Clicks_Old', 'Clicks_New']
+                all_cols = [c for c in all_cols if c in df.columns]
+                col_f1, col_f2, col_f3, col_f4 = st.columns(4)
+                with col_f1:
+                    all_clusters = sorted(df['Cluster'].dropna().unique().tolist())
+                    sel_cluster = st.multiselect(t["ad_filter_cluster"], options=all_clusters)
+                with col_f2:
+                    all_intents = set()
+                    for i in df['Search Intent'].dropna():
+                        for piece in i.split(', '):
+                            all_intents.add(piece)
+                    sel_intent = st.multiselect(t["ad_filter_intent"], options=sorted(list(all_intents)))
+                with col_f3:
+                    all_changes = sorted(df['Change'].dropna().unique().tolist())
+                    sel_change = st.multiselect(t["ad_filter_change"], options=all_changes)
+                with col_f4:
+                    search_kw = st.text_input(t["ad_filter_kw"], key="ad_kw")
+                f_df = df[all_cols].copy()
+                if sel_cluster:
+                    f_df = f_df[f_df['Cluster'].isin(sel_cluster)]
+                if sel_intent:
+                    f_df = f_df[f_df['Search Intent'].apply(lambda x: any(c in x for c in sel_intent))]
+                if sel_change:
+                    f_df = f_df[f_df['Change'].isin(sel_change)]
+                if search_kw:
+                    f_df = f_df[f_df['Keyword'].astype(str).str.lower().str.contains(search_kw.lower(), na=False)]
+                display_styled_dataframe(f_df, sort_col='Clicks Change', ascending=False)
 
     elif mode_key == "sistrix":
-        tab_sum, tab2, tab4, tab3, tab_d, tab1, tab5 = st.tabs([
-            t["tab_summary"], t["tab_drops"], t["tab_winners"], t["tab_lhf"],
-            t["tab_dir"], t["tab_cluster"], t["tab_all"]
-        ], key="main_tabs", on_change=on_tab_change)
+        if st.session_state.get('print_mode', False):
+            tab_sum = contextlib.nullcontext()
+            tab2 = contextlib.nullcontext()
+            tab4 = contextlib.nullcontext()
+            tab3 = contextlib.nullcontext()
+            tab_d = contextlib.nullcontext()
+            tab1 = contextlib.nullcontext()
+            tab5 = contextlib.nullcontext()
+        else:
+            tab_sum, tab2, tab4, tab3, tab_d, tab1, tab5 = st.tabs([
+                t["tab_summary"], t["tab_drops"], t["tab_winners"], t["tab_lhf"],
+                t["tab_dir"], t["tab_cluster"], t["tab_all"]
+            ], key="main_tabs", on_change=on_tab_change)
 
         with tab_sum:
             st.header(t["kpi_header_sistrix"])
@@ -1660,6 +1827,8 @@ if uploaded_file is not None and st.session_state['analyzed']:
 
 
         with tab_d:
+            if st.session_state.get('print_mode', False):
+                st.markdown(f"<h2 class='print-page-break'>{t['tab_dir']}</h2>", unsafe_allow_html=True)
             st.subheader(t["dir_sub"])
             if not top10_drops.empty:
                 dir_vol = top10_drops.groupby('Directory').agg(
@@ -1686,6 +1855,8 @@ if uploaded_file is not None and st.session_state['analyzed']:
                 st.info(t["dir_empty"])
 
         with tab1:
+            if st.session_state.get('print_mode', False):
+                st.markdown(f"<h2 class='print-page-break'>{t['tab_cluster']}</h2>", unsafe_allow_html=True)
             st.subheader(t["cl_sub"])
             st.markdown(t["cl_desc"])
             if not losers.empty:
@@ -1712,8 +1883,13 @@ if uploaded_file is not None and st.session_state['analyzed']:
                 st.info(t["cl_empty"])
 
         with tab2:
+            if st.session_state.get('print_mode', False):
+                st.markdown(f"<h2 class='print-page-break'>{t['tab_drops']}</h2>", unsafe_allow_html=True)
             st.subheader(t["rd_sub"])
-            kw_filter = st.text_input(t["rd_filter"]).strip().lower()
+            if not st.session_state.get('print_mode', False):
+                kw_filter = st.text_input(t["rd_filter"]).strip().lower()
+            else:
+                kw_filter = ""
             f_top3 = top3_drops[top3_drops['Keyword'].astype(str).str.lower().str.contains(kw_filter, na=False)] if kw_filter else top3_drops
             f_top10 = top10_drops[top10_drops['Keyword'].astype(str).str.lower().str.contains(kw_filter, na=False)] if kw_filter else top10_drops
             f_page2 = page2_drops[page2_drops['Keyword'].astype(str).str.lower().str.contains(kw_filter, na=False)] if kw_filter else page2_drops
@@ -1774,6 +1950,8 @@ if uploaded_file is not None and st.session_state['analyzed']:
                 st.info(t["rd_100_empty"])
 
         with tab3:
+            if st.session_state.get('print_mode', False):
+                st.markdown(f"<h2 class='print-page-break'>{t['tab_lhf']}</h2>", unsafe_allow_html=True)
             st.subheader(t["lhf_sub"], anchor="low-hanging-fruits")
             st.markdown(t["lhf_desc_sistrix"])
             if not low_hanging.empty:
@@ -1801,27 +1979,32 @@ if uploaded_file is not None and st.session_state['analyzed']:
                 styler = styler.map(lambda x: 'color: #90c274; font-weight: bold;' if pd.notnull(x) and x > 0 else ('color: #d28063; font-weight: bold;' if pd.notnull(x) and x < 0 else ''), subset=['Position Change'])
                 format_dict['Position Change'] = lambda x: f"▲ +{format_num(abs(x), 2)}" if pd.notnull(x) and x > 0 else (f"▼ -{format_num(abs(x), 2)}" if pd.notnull(x) and x < 0 else format_num(0.0, 2))
                 styler = styler.format(format_dict)
-                st.dataframe(
-                    styler,
-                    column_config={
-                        "Potential Score": st.column_config.ProgressColumn(
-                            "Potential Score",
-                            help=t.get("lhf_pot_help", "Calculated potential (0-10)"),
-                            format="%.1f",
-                            min_value=0.0,
-                            max_value=10.0,
-                        ),
-                        "Difficulty": st.column_config.TextColumn(
-                            t.get("lhf_diff_label", "Difficulty"),
-                            help=t.get("lhf_diff_help", "Estimated difficulty")
-                        )
-                    },
-                    use_container_width=True
-                )
+                if st.session_state.get('print_mode', False):
+                    st.markdown(styler.to_html(), unsafe_allow_html=True)
+                else:
+                    st.dataframe(
+                        styler,
+                        column_config={
+                            "Potential Score": st.column_config.ProgressColumn(
+                                "Potential Score",
+                                help=t.get("lhf_pot_help", "Calculated potential (0-10)"),
+                                format="%.1f",
+                                min_value=0.0,
+                                max_value=10.0,
+                            ),
+                            "Difficulty": st.column_config.TextColumn(
+                                t.get("lhf_diff_label", "Difficulty"),
+                                help=t.get("lhf_diff_help", "Estimated difficulty")
+                            )
+                        },
+                        use_container_width=True
+                    )
             else:
                 st.info(t["lhf_empty"])
 
         with tab4:
+            if st.session_state.get('print_mode', False):
+                st.markdown(f"<h2 class='print-page-break'>{t['tab_winners']}</h2>", unsafe_allow_html=True)
             st.subheader(t["win_sub_sistrix"])
             if not winners.empty:
                 fig_win = px.scatter(winners, x="Search Volume", y="Position#2",
@@ -1836,45 +2019,46 @@ if uploaded_file is not None and st.session_state['analyzed']:
             else:
                 st.info(t["win_empty"])
 
-        with tab5:
-            st.subheader(t["ad_sub"])
-            f_col1, f_col2, f_col3, f_col4, f_col5 = st.columns(5)
-            all_clusters_sis = sorted([c for c in df['Cluster'].dropna().unique() if c != 'undefined']) + ['undefined']
-            with f_col1:
-                sel_clusters = st.multiselect(t["ad_filter_cluster"], options=all_clusters_sis)
-            with f_col2:
-                is_disabled = intent_skipped
-                all_intents_sis = set()
-                for val in df['Search Intent'].dropna().unique():
-                    for piece in val.split(', '):
-                        all_intents_sis.add(piece)
-                sel_intents = st.multiselect(t["ad_filter_intent"], options=sorted(list(all_intents_sis)), disabled=is_disabled)
-            all_changes_sis = sorted(df['Change'].unique().tolist())
-            with f_col3:
-                sel_changes = st.multiselect(t["ad_filter_change"], options=all_changes_sis)
-            all_dirs = sorted(df['Directory'].unique().tolist())
-            with f_col4:
-                sel_dirs = st.multiselect(t["ad_filter_dir"], options=all_dirs)
-            with f_col5:
-                search_kw = st.text_input(t["ad_filter_kw"]).strip().lower()
+        if not st.session_state.get('print_mode', False):
+            with tab5:
+                st.subheader(t["ad_sub"])
+                f_col1, f_col2, f_col3, f_col4, f_col5 = st.columns(5)
+                all_clusters_sis = sorted([c for c in df['Cluster'].dropna().unique() if c != 'undefined']) + ['undefined']
+                with f_col1:
+                    sel_clusters = st.multiselect(t["ad_filter_cluster"], options=all_clusters_sis)
+                with f_col2:
+                    is_disabled = intent_skipped
+                    all_intents_sis = set()
+                    for val in df['Search Intent'].dropna().unique():
+                        for piece in val.split(', '):
+                            all_intents_sis.add(piece)
+                    sel_intents = st.multiselect(t["ad_filter_intent"], options=sorted(list(all_intents_sis)), disabled=is_disabled)
+                all_changes_sis = sorted(df['Change'].unique().tolist())
+                with f_col3:
+                    sel_changes = st.multiselect(t["ad_filter_change"], options=all_changes_sis)
+                all_dirs = sorted(df['Directory'].unique().tolist())
+                with f_col4:
+                    sel_dirs = st.multiselect(t["ad_filter_dir"], options=all_dirs)
+                with f_col5:
+                    search_kw = st.text_input(t["ad_filter_kw"]).strip().lower()
 
-            all_cols_sis = ['Cluster', 'Search Intent', 'Directory', 'Keyword', 'Change', 'Position Change',
-                            'Traffic Change', 'Lost Value €', 'Position#1', 'Position#2', 'Search Volume',
-                            'Traffic#1', 'Traffic#2', 'URL']
-            all_cols_sis = [c for c in all_cols_sis if c in df.columns]
+                all_cols_sis = ['Cluster', 'Search Intent', 'Directory', 'Keyword', 'Change', 'Position Change',
+                                'Traffic Change', 'Lost Value €', 'Position#1', 'Position#2', 'Search Volume',
+                                'Traffic#1', 'Traffic#2', 'URL']
+                all_cols_sis = [c for c in all_cols_sis if c in df.columns]
 
-            filtered_df = df.copy()
-            if sel_clusters:
-                filtered_df = filtered_df[filtered_df['Cluster'].isin(sel_clusters)]
-            if sel_intents:
-                filtered_df = filtered_df[filtered_df['Search Intent'].apply(lambda x: any(c in x for c in sel_intents))]
-            if sel_changes:
-                filtered_df = filtered_df[filtered_df['Change'].isin(sel_changes)]
-            if sel_dirs:
-                filtered_df = filtered_df[filtered_df['Directory'].isin(sel_dirs)]
-            if search_kw:
-                filtered_df = filtered_df[filtered_df['Keyword'].astype(str).str.lower().str.contains(search_kw, na=False)]
-            display_styled_dataframe(filtered_df[all_cols_sis], sort_col='Position Change', ascending=True)
+                filtered_df = df.copy()
+                if sel_clusters:
+                    filtered_df = filtered_df[filtered_df['Cluster'].isin(sel_clusters)]
+                if sel_intents:
+                    filtered_df = filtered_df[filtered_df['Search Intent'].apply(lambda x: any(c in x for c in sel_intents))]
+                if sel_changes:
+                    filtered_df = filtered_df[filtered_df['Change'].isin(sel_changes)]
+                if sel_dirs:
+                    filtered_df = filtered_df[filtered_df['Directory'].isin(sel_dirs)]
+                if search_kw:
+                    filtered_df = filtered_df[filtered_df['Keyword'].astype(str).str.lower().str.contains(search_kw, na=False)]
+                display_styled_dataframe(filtered_df[all_cols_sis], sort_col='Position Change', ascending=True)
 
 else:
     info_key = f"info_upload_{mode_key}"

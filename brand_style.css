@@ -12,6 +12,11 @@ html, body, [class*="css"], .stApp {
     color: #2f2f2f !important;
 }
 
+/* Restore the grey background for the app since config.toml backgroundColor is now white */
+.stApp {
+    background-color: #eaeaea !important;
+}
+
 /* Headings — display family (Raleway) */
 h1, h2, h3, h4, h5, h6,
 .stApp h1, .stApp h2, .stApp h3, .stApp h4, .stApp h5, .stApp h6 {
@@ -104,11 +109,20 @@ hr.hr--black, .stMarkdown hr.hr--black { background-color: #232323 !important; }
 }
 
 /* --- DataFrames & Tables — white background --- */
-.stDataFrame, [data-testid="stDataFrame"],
+.stDataFrame, 
+[data-testid="stDataFrame"],
 [data-testid="stTable"],
 .stDataFrame [data-testid="stDataFrameResizable"],
-.stDataFrame iframe {
+.stDataFrame iframe,
+[data-testid="stDataFrame"] > div,
+[data-testid="stDataFrame"] [data-testid="stDataFrameResizable"],
+[data-testid="stDataFrame"] .glideDataEditor,
+[data-testid="stDataFrame"] canvas {
     background-color: #ffffff !important;
+}
+/* Override Streamlit theme variable inside dataframe scope */
+[data-testid="stDataFrame"] {
+    --background-color: #ffffff !important;
 }
 
 /* Ensure inner elements of keyed containers also have white background */
@@ -214,10 +228,108 @@ section[data-testid="stSidebar"] .stButton > button[kind="secondary"] {
 }
 
 /* Input Fields & Selection outline */
-.stTextInput input, .stSelectbox select, .stSlider [data-testid="stSlider"] {
+[data-testid="stTextInput"] div[data-baseweb="input"],
+[data-testid="stSelectbox"] div[data-baseweb="select"],
+[data-testid="stTextArea"] div[data-baseweb="textarea"],
+.stTextInput input, .stSelectbox select {
+    border: 1px solid #d2d2d2 !important;
     border-radius: 8px !important;
+    background-color: #ffffff !important;
+    transition: all 120ms ease !important;
 }
-.stTextInput input:focus, .stSelectbox select:focus {
+
+/* Hover & Focus state */
+[data-testid="stTextInput"] div[data-baseweb="input"]:focus-within,
+[data-testid="stSelectbox"] div[data-baseweb="select"]:focus-within,
+[data-testid="stTextArea"] div[data-baseweb="textarea"]:focus-within {
     border-color: #993333 !important;
     box-shadow: 0 0 0 3px rgba(153, 51, 51, 0.25) !important;
+}
+
+.stSlider [data-testid="stSlider"] {
+    border-radius: 8px !important;
+}
+
+/* ============================================================
+   Print & PDF Export Styling
+   ============================================================ */
+
+/* Styles for the print preview toolbar in the dashboard */
+.st-key-print_toolbar {
+    background-color: #fbfbfb !important;
+    border: 1px dashed #993333 !important;
+    border-radius: 10px !important;
+    padding: 1rem !important;
+    margin-bottom: 2rem !important;
+}
+
+/* Hide print toolbar and other UI elements when generating PDF or printing */
+@media print {
+    [data-testid="stSidebar"],
+    [data-testid="stHeader"],
+    .st-key-print_toolbar,
+    .print-hide,
+    footer,
+    iframe {
+        display: none !important;
+    }
+
+    .stApp {
+        background-color: #ffffff !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    [data-testid="stAppViewContainer"] {
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 0 !important;
+    }
+}
+
+/* Avoid page breaks inside key components and charts during print/PDF generation */
+.st-key-exec_summary_container,
+.st-key-gsc_exec_summary_container,
+[data-testid="stMetric"],
+.js-plotly-plot,
+.stDataFrame,
+[data-testid="stTable"] {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+}
+
+/* Add slight top margin to headers in print mode to make them look like new pages */
+.print-page-break {
+    page-break-before: always !important;
+    break-before: page !important;
+    padding-top: 2rem !important;
+}
+
+/* ============================================================
+   ProgressColumn Bar — Corporate Blue Override
+   Streamlit renders ProgressColumn cells as <progress> elements.
+   Default colour is wine-red; we override to corporate blue (#2ea3f2).
+   ============================================================ */
+
+/* WebKit (Chrome, Edge, Safari) */
+[data-testid="stDataFrame"] progress::-webkit-progress-value,
+[data-testid="stDataFrameResizable"] progress::-webkit-progress-value {
+    background-color: #2ea3f2 !important;
+}
+[data-testid="stDataFrame"] progress::-webkit-progress-bar,
+[data-testid="stDataFrameResizable"] progress::-webkit-progress-bar {
+    background-color: #e8f4fc !important;
+    border-radius: 4px !important;
+}
+
+/* Firefox */
+[data-testid="stDataFrame"] progress::-moz-progress-bar,
+[data-testid="stDataFrameResizable"] progress::-moz-progress-bar {
+    background-color: #2ea3f2 !important;
+}
+
+/* Standard (future-proof) */
+[data-testid="stDataFrame"] progress,
+[data-testid="stDataFrameResizable"] progress {
+    accent-color: #2ea3f2 !important;
 }
